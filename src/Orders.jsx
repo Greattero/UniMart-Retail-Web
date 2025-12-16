@@ -112,14 +112,29 @@ function Orders({style}){
                     width: "15vw",
                     alignItems: "center",
                     borderRightColor: "rgba(231, 232, 231, 1)",
+                    flexDirection: "column",
+                    overflow: "hidden"
 
                     }}>
-                        <BiCalendar style={{
-                            fontSize:"20px",
+                        <p style={{
+                            fontSize:13,
+                            color: "gray",
+                            marginRight:"140px",
+                            marginTop:"15px",
+                            display:"flex",
+
+
+                        }}                        
+                        >Total Revenue</p>
+
+                        <p style={{
                             color: "black",
-                            marginTop: "2px",
-                        }}/>
-                        <p>Total Revenue</p>
+                            marginTop:"15px",
+                            marginRight:"130px",
+                            fontSize: "30px",
+                            fontWeight:"bold"
+
+                        }} >$8000</p>
                     </div>
 
                     <div style={{
@@ -130,14 +145,29 @@ function Orders({style}){
                     width: "15vw",
                     alignItems: "center",
                     borderRightColor: "rgba(231, 232, 231, 1)",
+                    flexDirection: "column",
+                    overflow: "hidden"
 
                     }}>
-                        <BiCalendar style={{
-                            fontSize:"20px",
+
+                        <p style={{
+                            fontSize:13,
+                            color: "gray",
+                            marginRight:"120px",
+                            marginTop:"15px",
+                            display:"flex",
+                        }}
+                        
+                        >Total Orders</p>
+
+                        <p style={{
                             color: "black",
-                            marginTop: "2px",
-                        }}/>
-                        <p>Total Orders</p>
+                            marginTop:"15px",
+                            marginRight:"135px",
+                            fontSize: "30px",
+                            fontWeight:"bold"
+
+                        }} >330</p>
                     </div>
 
                     <div style={{
@@ -274,7 +304,7 @@ function Orders({style}){
                         <button style={{
                             backgroundColor: "rgba(167, 167, 167, 1)",
                             color: "white",
-                            width: "14.5vw",
+                            width: "14.7vw",
                             display: "flex",
                             justifyContent: "center",
                             borderRadius: "5px",

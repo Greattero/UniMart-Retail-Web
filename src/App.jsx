@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Header from './Header.jsx';
 import Orders from './Orders.jsx';
+import ManageBusiness from './ManageBusiness.jsx';
 import './index.css';
 
 
@@ -19,7 +20,8 @@ function App() {
 
   <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
     <Header style={{ height: "9vh" }} />
-    <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />
+    {/* <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} /> */}
+    <ManageBusiness style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}/>
   </div>
 </div>
 

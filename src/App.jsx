@@ -8,6 +8,8 @@ import './index.css';
 
 function App() {
 
+  const [tab,setTab] = useState("dashboard");
+
   return (
  <div style={{
         display: "flex",
@@ -16,12 +18,15 @@ function App() {
         backgroundColor: "rgba(231, 232, 231, 1)",
         overflow: "hidden", // VERY IMPORTANT
       }}>
-  <Sidebar/>
+  <Sidebar
+  sendTabSignal={setTab}
+  />
 
   <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
     <Header style={{ height: "9vh" }} />
-    {/* <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} /> */}
-    <ManageBusiness style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}/>
+    {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
+    {tab === "manage" && <ManageBusiness 
+    style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}/>}
   </div>
 </div>
 

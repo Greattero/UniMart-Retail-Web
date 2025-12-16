@@ -4,7 +4,7 @@ import jollof from "./assets/jollofFood.jpg";
 import { MdDelete } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
 import { app } from "./firebaseConfig.js"; // your firebaseConfig file
-import { getDatabase, onValue, ref, set } from "firebase/database";
+import { getDatabase, onValue, ref, get, update } from "firebase/database";
 // import { getDatabase, onValue, ref, set } from "firebase/database";
 import "./inputStyle.css"
 import supabase from "./supabaseClient";
@@ -101,10 +101,10 @@ function ManageBusiness({style}){
 
         setFileURL(url.publicUrl)
 
-        // setFoodData((prev)=>({
-        //     ...prev,  
-        //     ["image"]: publicUrl
-        // }))
+        setFoodData((prev)=>({
+            ...prev,  
+            ["image"]: url.publicUrl
+        }))
         
     };
 
@@ -117,14 +117,37 @@ function ManageBusiness({style}){
     
     const removeAddOn = (id) =>{
         setAddOns((prev) => prev.filter(addOns => addOns.id !== id))
+        setInputAddOns((prev) => prev.filter(addOns => addOns.id !== id))
     }
 
 
     const handleSubmit = ()=>{
-        set(ref(db, `restaurants/Fosphag`), {
-            foods: foodData,
-            [foodData.name]: inputAddOns,
+        if(Object.keys(foodData).length === 0 || inputAddOns.length === 0 || fileURL === null ){
+            console.log("Fields not filled totally");
+            return
+        }
+
+        get(ref(db, `restaurants/Fosphag/foods`)).then(snapshot => {
+        const existing = snapshot.val() || [];
+        const updatedFoods = [...existing, foodData];
+
+        update(ref(db, `restaurants/Fosphag`), {
+            foods: updatedFoods,
+            [foodData.name]: inputAddOns
         })
+        .then(()=>{
+            console.log("Stored in firebase successfully")
+            setFoodData({});
+            setInputAddOns([]);
+            setFileURL(null);
+            setChecked(false);
+            setAddOns([{id: 0, field1: "Item", field2:"Price"}])
+        })
+        .catch((err)=>{
+            console.log(`err ${err}`)
+        });
+        console.log("Submitted❤️❤️");
+        });
     }
 
     return(
@@ -205,7 +228,14 @@ function ManageBusiness({style}){
                             style={{
                                 color: "#554f4fff"                                
                             }}
-                            onClick={()=>setOpenPopUp(false)}
+                            onClick={()=>{
+                                setOpenPopUp(false);
+                                setFoodData({});
+                                setInputAddOns([]);
+                                setFileURL(null);
+                                setChecked(false);
+                                setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
+                            }}
                         >
                             <IoMdClose />
                         </button>
@@ -225,7 +255,7 @@ function ManageBusiness({style}){
                         }}
                         onClick={()=>handleDialogue()}
                         >
-                            <img src={foodData.image ? URL.createObjectURL(foodData.image) : null} alt="Cover Picture" style={{height:"50vh", width: "50vw"}}/>
+                            <img src={fileURL ? fileURL : null} alt="Cover Picture" style={{height:"50vh", width: "50vw"}}/>
                             {/* {handleFoodImage("image", jollof)} */}
 
                         </button>
@@ -315,6 +345,7 @@ function ManageBusiness({style}){
 
                                         <div className="input-group" style={{width:"110px"}}>
                                             <input placeholder=" "
+                                            type="number"
                                             value={inputAddOns.find(item => item.id === addOn.id)?.price || ""}
                                             onChange={(e)=>handleAddOnsChange(addOn.id,"price",e.target.value)}
                                             />
@@ -360,7 +391,7 @@ function ManageBusiness({style}){
                                                 }} />}
                                             </button>
                                             </div>                                                                              
-                                        </div>
+                                        </div>                                        
                                     )
                                     })}
                                     {/* {<div className="input-group">
@@ -368,6 +399,28 @@ function ManageBusiness({style}){
                                         <label>Item</label>
                                     </div>} */}
                                 </div>}
+
+                                <div style={{
+                                    display:"flex",
+                                    alignItems: "flex-end",
+                                    justifyContent: "flex-end",
+                                    marginTop: checked?"25px":"130px",
+                                    marginRight: "10px",
+                                    marginBottom: "20px"
+                                }}>
+                                    <button 
+                                    onClick={()=>handleSubmit()}
+                                    style={{
+                                        backgroundColor: "rgba(34, 136, 87, 1)",
+                                        padding: "4px",
+                                        color: "white",
+                                        borderRadius: "5px",
+                                        width:"10vw"
+
+                                    }}>
+                                        Submit
+                                    </button>
+                                </div>
 
                     </div>
                     </div>
@@ -382,3 +435,7 @@ function ManageBusiness({style}){
 
 }
 export default ManageBusiness;
+
+//when i click on close in pop up, everything should clear or reset
+
+// when an addon field is deleted let it affect the inputAddon itself

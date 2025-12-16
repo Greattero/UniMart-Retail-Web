@@ -33,6 +33,7 @@ function Header({style}){
                     // marginTop: 15,
                     fontWeight:"bold",
                     fontSize:"25px",
+                    marginLeft:"20px"
                    
 
                 }}>Dashboard</p>

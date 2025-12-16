@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState} from 'react';
-import { BiBriefcase, BiFile, BiFileBlank, BiHome, BiSolidReport } from "react-icons/bi";
+import { BiBriefcase, BiBriefcaseAlt, BiFile, BiFileBlank, BiHome, BiSolidBriefcase, BiSolidFile, BiSolidHome, BiSolidReport } from "react-icons/bi";
 
 
-function Sidebar(){
+function Sidebar({sendTabSignal}){
+
+    const [buttonClicked, setButtonClicked] = useState({dashboard:true,
+                                                        reports: false,
+                                                        manage: false,
+    })
 
 
     return(
@@ -36,46 +41,120 @@ function Sidebar(){
 
                 <div style={{
                     marginTop: "60px",
+                    marginRight: "35px",
                 }}>
-                    <button style={{
-                        color: "gray",
+                    <button 
+                    onClick={()=>{
+                        setButtonClicked(prev => ({
+                            dashboard: true,
+                            reports: false,
+                            manage: false
+                            }));
+                        sendTabSignal?.("dashboard");
+                        }}
+                    style={{
+                        color: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" :"gray",
                         marginBottom: "30px",
                         display:"flex",
-                        gap: 8
+                        gap: 8,
+                        borderWidth: buttonClicked.dashboard===true ? 2 : null,
+                        padding: buttonClicked.dashboard===true ? "5px" : "5px",
+                        borderColor: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" : null,
+                        borderRadius: "10px",
+                        backgroundColor: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 0.1)" : null
                     }}>
-                        <BiHome style={{
+                        <>
+                            { buttonClicked.dashboard=== true ?
+                            <BiSolidHome style={{
                             fontSize:"20px",
-                            color: "gray",
+                            color: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" : "gray",
                             marginTop: "2px",
-                        }}/>
+                            }}/>
+                            :
+                            <BiHome style={{
+                                fontSize:"20px",
+                                color: "gray",
+                                marginTop: "2px",
+                            }}/>}
+                        </>
                         Dashboard
                     </button >
 
-                    <button style={{
-                        color: "gray",
+                    <button 
+                    onClick={()=>{
+                        setButtonClicked(prev => ({
+                            dashboard: false,
+                            reports: true,
+                            manage: false
+                            }));
+                        sendTabSignal?.("reports");
+                        }}
+                    style={{
+                        color: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" :"gray",
                         marginBottom: "30px",
                         display:"flex",
-                        gap: 8
+                        gap: 8,
+                        borderWidth: buttonClicked.reports===true ? 2 : null,
+                        padding: buttonClicked.reports===true ? "5px" : "5px",
+                        borderColor: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" : null,
+                        borderRadius: "10px",
+                        backgroundColor: buttonClicked.reports===true ? "rgba(34, 136, 87, 0.1)" : null
                     }}>
-                        <BiFile style={{
+                            <>
+                            
+                        { buttonClicked.reports=== true ?
+                            <BiSolidFile style={{
                             fontSize:"20px",
-                            color: "gray",
+                            color: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" : "gray",
                             marginTop: "2px",
                         }}/>
+                            :
+                            <BiFile style={{
+                                fontSize:"20px",
+                                color: "gray",
+                                marginTop: "2px",
+                            }}/>}
+                        </>
                         Reports
                     </button>
 
-                    <button style={{
-                        color: "gray",
+                    <button 
+                    onClick={()=>{
+                        setButtonClicked(prev => ({
+                            dashboard: false,
+                            reports: false,
+                            manage: true
+                            }));
+                        sendTabSignal?.("manage");
+                        }}
+                    style={{
+                        color: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" :"gray",
                         marginBottom: "30px",
                         display:"flex",
-                        gap: 8
+                        gap: 8,
+                        borderWidth: buttonClicked.manage===true ? 2 : null,
+                        padding: buttonClicked.manage===true ? "5px" : "5px",
+                        borderColor: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" : null,
+                        borderRadius: "10px",
+                        backgroundColor: buttonClicked.manage===true ? "rgba(34, 136, 87, 0.1)" : null
                     }}>
+                        
+                            <>
+                            
+                            { buttonClicked.manage=== true ?
+                            <BiSolidBriefcase style={{
+                            fontSize:"20px",
+                            color: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" : "gray",
+                            marginTop: "2px",
+                        }}/>
+                        :
                         <BiBriefcase style={{
                             fontSize:"20px",
                             color: "gray",
                             marginTop: "2px",
-                        }}/>
+                        }}/>}
+                        </>
+                        
                         Manage Business
                     </button>
 

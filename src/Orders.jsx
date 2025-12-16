@@ -193,14 +193,26 @@ function Orders({style}){
                 </div>
 
                 <div style={{
-                height: "60vh",
+                height: "62vh",
+                width: "76vw",
+                display: "flex", 
+                // borderRadius:"5px",
+                backgroundColor:"white",
+                marginTop:"30px",
+                paddingTop:"10px",
+                alignItems:"center",
+                justifyContent:"center",
+                borderRadius: "20px"
+                }}>
+                <div style={{
+                height: "57vh",
                 width: "76vw",
                 overflow: "scroll",
                 backgroundColor: "white",
-                borderRadius: " 20px",
+                // borderRadius: " 20px",
                 display: "flex",
                 alignItems: "center",
-                marginTop: "50px",
+                marginTop: "3.5px",
                 flex: 1,
                 flexDirection:"column",                
                 }}>
@@ -216,7 +228,7 @@ function Orders({style}){
                         alignItems:"center",
                         flexDirection: "column",
                         position: "sticky",   // <-- make it sticky
-                        top: 10,               // <-- stick to top
+                        top: 0,               // <-- stick to top
                         zIndex: 10,
                     }}>
                         <div style={{
@@ -347,6 +359,7 @@ function Orders({style}){
             })}
             </div>
                 </div>
+            </div>
 
 
 

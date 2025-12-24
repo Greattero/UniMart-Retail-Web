@@ -25,6 +25,7 @@ function ManageBusiness({style}){
     const [removeLoader, setRemoveLoader] = useState(false);
     const [editImage, setEditImage] = useState("");
     const [removedFood, setRemovedFood] = useState("");
+    const [oldRef, setOldRef] = useState("")
 
     get(restaurantRef).then((snapshot)=>{
 
@@ -111,6 +112,8 @@ function ManageBusiness({style}){
         const addOnsRef = ref(db,`restaurants/Fosphag/${food}`);
         const categoryRef = ref(db, `restaurants/Fosphag/category`);
 
+        setOldRef(food);
+
 
         get(foodRef).then((snapshot) =>{
 
@@ -141,7 +144,9 @@ function ManageBusiness({style}){
             
             const numberOfAddOns = toBeEdittedAddOn.length;
 
-            setAddOnLimit(numberOfAddOns);
+
+            setAddOnLimit(Math.max(0,numberOfAddOns-1));
+            console.log(`ffffff: ${numberOfAddOns}`);
 
             const list = Array.from({length: numberOfAddOns},(_,i) =>({
                 id: i,
@@ -300,7 +305,11 @@ function ManageBusiness({style}){
         // Insert in restaurant
         get(ref(db, `restaurants/Fosphag/foods`)).then(snapshot => {
         const existing = snapshot.val() || [];
-        const updatedFoods = [...existing, foodData];
+        const updatedFoods = selectedEditFood === false ? [...existing, foodData] : existing.map(
+            f => f.name === oldRef ?
+            {...f, ...foodData}
+            : f
+        );
 
         update(ref(db, `restaurants/Fosphag`), {
             foods: updatedFoods,
@@ -308,6 +317,9 @@ function ManageBusiness({style}){
             category: selectedCategory
         })
         .then(()=>{
+            if (selectedEditFood && oldRef !== foodData.name) {
+            remove(ref(db, `restaurants/Fosphag/${oldRef}`));
+            }
             console.log("Stored in firebase successfully")
             setFoodData({});
             setInputAddOns([]);
@@ -321,7 +333,8 @@ function ManageBusiness({style}){
         })
         .catch((err)=>{
             console.log(`err ${err}`)
-        });
+        })      
+        ;
         console.log("Submitted❤️❤️");
         });
 
@@ -333,13 +346,21 @@ function ManageBusiness({style}){
         ...foodData,
         restaurantName: "Fosphag"
         };
-        const updatedFoods = [...existing, foodWithRestaurant];
+        const updatedFoods = selectedEditFood===false ? [...existing, foodWithRestaurant] : existing.map(
+            f => f.name === oldRef && f.restaurantName ==="Fosphag" ? {
+                ...f, ...foodWithRestaurant
+            } : f
+        
+        );
 
         update(ref(db, `foodDisplay`), {
             [selectedCategory]: updatedFoods,
             // restaurantName : "Fosphag"
         })
         .then(()=>{
+            // if (selectedEditFood &&  && oldRef !== foodData.name) {
+            // remove(ref(db, `restaurants/Fosphag/${oldRef}`));
+            // }
             console.log(`Stored in ${selectedCategory} successfully`)
             setSelectedCatergory(null);
             setLoader(false);
@@ -776,8 +797,9 @@ function ManageBusiness({style}){
                                             <label>{addOn.field2}</label>
 
                                          </div>
-                                         {/* {console.table(inputAddOns)}
-                                         {console.table(addOns)} */}
+                                         {console.log(addOn.id)}
+                                         {/* {console.table(inputAddOns)} */}
+                                         {/* {console.table(addOns)} */}
 
                                             {/* <MdDelete style={{
                                                 marginTop: "31px",

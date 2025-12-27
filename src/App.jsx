@@ -3,6 +3,7 @@ import Sidebar from './Sidebar.jsx'
 import Header from './Header.jsx';
 import Orders from './Orders.jsx';
 import ManageBusiness from './ManageBusiness.jsx';
+import LoginSignup from './LoginSignup.jsx';
 import './index.css';
 
 
@@ -18,7 +19,7 @@ function App() {
         backgroundColor: "rgba(231, 232, 231, 1)",
         overflow: "hidden", // VERY IMPORTANT
       }}>
-  <Sidebar
+  {/* <Sidebar
   sendTabSignal={setTab}
   />
 
@@ -27,7 +28,9 @@ function App() {
     {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
     {tab === "manage" && <ManageBusiness 
     style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}/>}
-  </div>
+  </div> */}
+
+  <LoginSignup/>
 </div>
 
   )

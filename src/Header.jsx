@@ -1,8 +1,13 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 
 
-function Header({style}){
+function Header({style, getProlifeName}){
 
+    const [profile, setProfile] = useState("");
+
+    useEffect(()=>{
+        setProfile(getProlifeName);
+    },[getProlifeName])
 
     return(
     <>
@@ -45,7 +50,7 @@ function Header({style}){
                     marginTop: "6px",
                     paddingLeft: "65vw"
                     
-                }}>Jessica Mahunu</p>
+                }}>{profile}</p>
 
             </div>
             

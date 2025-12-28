@@ -4,12 +4,20 @@ import Header from './Header.jsx';
 import Orders from './Orders.jsx';
 import ManageBusiness from './ManageBusiness.jsx';
 import LoginSignup from './LoginSignup.jsx';
+import CardScanner from './CardScanner.jsx';
 import './index.css';
 
 
 function App() {
 
   const [tab,setTab] = useState("dashboard");
+  const [seller, setSeller] = useState("");
+  const [restaurant, setRestaurant] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState("");
+
+  console.log("Seller: ", seller);
+  console.log("Restaurant: ", restaurant);
+
 
   return (
  <div style={{
@@ -19,18 +27,31 @@ function App() {
         backgroundColor: "rgba(231, 232, 231, 1)",
         overflow: "hidden", // VERY IMPORTANT
       }}>
-  {/* <Sidebar
-  sendTabSignal={setTab}
-  />
+{  isLoggedIn === true ?
+  <>
+  <Sidebar
+    sendTabSignal={setTab}
+    />
 
-  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-    <Header style={{ height: "9vh" }} />
-    {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
-    {tab === "manage" && <ManageBusiness 
-    style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}/>}
-  </div> */}
+    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <Header style={{ height: "9vh" }} 
+      getProlifeName={restaurant}
+      />
+      {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
+      {tab === "manage" && <ManageBusiness 
+      style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}
+      getSeller={seller}
+      />}
+    </div>
+  </>
+:
+  <LoginSignup
+  sendProfile={setSeller}
+  sendRestaurantName={setRestaurant}
+  setLogger={setIsLoggedIn}
+  />}
+  {/* <CardScanner/> */}
 
-  <LoginSignup/>
 </div>
 
   )

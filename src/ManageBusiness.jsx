@@ -1,4 +1,4 @@
-import React, {useState, useRef} from "react";
+import React, {useState, useRef, useEffect} from "react";
 import { IoAddCircle } from "react-icons/io5";
 import jollof from "./assets/jollofFood.jpg";
 import { MdDelete } from "react-icons/md";
@@ -13,11 +13,17 @@ import { snapshotEqual } from "firebase/firestore/lite";
 
 
 
-function ManageBusiness({style}){
+function ManageBusiness({style, getSeller}){
+
+    const [seller, setSeller] = useState("");
+
+    useEffect(()=>{
+        setSeller(getSeller);
+    },[getSeller])
 
     const db = getDatabase(app);
 
-    const restaurantRef = ref(db, `restaurants/Fosphag`);
+    const restaurantRef = ref(db, `restaurants/${seller}`);
 
     const [ownerMenu, setOwnerMenu] = useState(null);
     const [loader, setLoader] = useState(false);
@@ -108,9 +114,9 @@ function ManageBusiness({style}){
 
 
     const handleEdit = (food)=>{
-        const foodRef = ref(db,`restaurants/Fosphag/foods`);
-        const addOnsRef = ref(db,`restaurants/Fosphag/${food}`);
-        const categoryRef = ref(db, `restaurants/Fosphag/category`);
+        const foodRef = ref(db,`restaurants/${seller}/foods`);
+        const addOnsRef = ref(db,`restaurants/${seller}/${food}`);
+        const categoryRef = ref(db, `restaurants/${seller}/category`);
 
         setOldRef(food);
 
@@ -246,7 +252,7 @@ function ManageBusiness({style}){
 
         setRemoveLoader(true);
 
-        const foodRef= ref(db,(`restaurants/Fosphag/foods`));
+        const foodRef= ref(db,(`restaurants/${seller}/foods`));
 
         const foodDisplayRef = ref(db,(`foodDisplay`))
 
@@ -255,7 +261,7 @@ function ManageBusiness({style}){
             const filteredFoods = data.filter(f => f.name !== removedFood)
 
             //remove from foods
-            update(ref(db, `restaurants/Fosphag`),{
+            update(ref(db, `restaurants/${seller}`),{
                 foods: filteredFoods
             })
                 .then(()=>{
@@ -268,7 +274,7 @@ function ManageBusiness({style}){
                 });
 
             //remove the foodAddons
-            remove(ref(db,`restaurants/Fosphag/${removedFood}`))
+            remove(ref(db,`restaurants/${seller}/${removedFood}`))
                 .then(()=>{
                     setRemoveLoader(false);
                     setFoodData({});
@@ -303,7 +309,7 @@ function ManageBusiness({style}){
         setLoader(true)
 
         // Insert in restaurant
-        get(ref(db, `restaurants/Fosphag/foods`)).then(snapshot => {
+        get(ref(db, `restaurants/${seller}/foods`)).then(snapshot => {
         const existing = snapshot.val() || [];
         const updatedFoods = selectedEditFood === false ? [...existing, foodData] : existing.map(
             f => f.name === oldRef ?
@@ -311,14 +317,14 @@ function ManageBusiness({style}){
             : f
         );
 
-        update(ref(db, `restaurants/Fosphag`), {
+        update(ref(db, `restaurants/${seller}`), {
             foods: updatedFoods,
             [foodData.name]: inputAddOns,
             category: selectedCategory
         })
         .then(()=>{
             if (selectedEditFood && oldRef !== foodData.name) {
-            remove(ref(db, `restaurants/Fosphag/${oldRef}`));
+            remove(ref(db, `restaurants/${seller}/${oldRef}`));
             }
             console.log("Stored in firebase successfully")
             setFoodData({});
@@ -344,10 +350,10 @@ function ManageBusiness({style}){
         const existing = snapshot.val() || [];
         const foodWithRestaurant = {
         ...foodData,
-        restaurantName: "Fosphag"
+        restaurantName: seller
         };
         const updatedFoods = selectedEditFood===false ? [...existing, foodWithRestaurant] : existing.map(
-            f => f.name === oldRef && f.restaurantName ==="Fosphag" ? {
+            f => f.name === oldRef && f.restaurantName ===seller ? {
                 ...f, ...foodWithRestaurant
             } : f
         
@@ -355,11 +361,11 @@ function ManageBusiness({style}){
 
         update(ref(db, `foodDisplay`), {
             [selectedCategory]: updatedFoods,
-            // restaurantName : "Fosphag"
+            // restaurantName : seller
         })
         .then(()=>{
             // if (selectedEditFood &&  && oldRef !== foodData.name) {
-            // remove(ref(db, `restaurants/Fosphag/${oldRef}`));
+            // remove(ref(db, `restaurants/${seller}/${oldRef}`));
             // }
             console.log(`Stored in ${selectedCategory} successfully`)
             setSelectedCatergory(null);
@@ -374,7 +380,7 @@ function ManageBusiness({style}){
         });
 
         // update(ref(db, `foodDisplay/${selectedCategory}`), {
-        //     restaurantName : "Fosphag"
+        //     restaurantName : seller
         // })
         // .then(()=>{
         //     console.log(`Stored in particular ${selectedCategory} successfully`)
@@ -812,6 +818,7 @@ function ManageBusiness({style}){
                                             gap: 15,
                                         }}>   
                                             <button
+                                            disabled={addOnLimit === 10 ? true : false}
                                             onClick={()=>{
                                                 
                                                 setAddOnLimit((prev)=>prev+1)
@@ -917,7 +924,16 @@ function ManageBusiness({style}){
                                         </div>}
 
                                     </button>}
+
+                                    
                                 </div>
+                                <label style={{
+                                    display:"flex",
+                                    alignItems:"center",
+                                    justifyContent:"center",
+                                    color:"rgba(170, 170, 170, 1)",
+                                    fontStyle:"italic"
+                                }}>You can add up to 10 add-ons.</label>
 
                     </div>
                     </div>

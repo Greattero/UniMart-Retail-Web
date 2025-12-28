@@ -14,15 +14,17 @@ import {
     signInWithPopup,
     signInWithEmailAndPassword,
     sendEmailVerification,
+    deleteUser,
     reload 
 } from "firebase/auth";
+import mail from "./assets/mail.png";
 import { useGoogleLogin } from "@react-oauth/google";
 import {jwtDecode} from "jwt-decode";
 
 
 
 
-function LoginSignup({sendCameraSignal, sendProfile}) {
+function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
 
     const db = getDatabase(app);
 
@@ -42,14 +44,20 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
     const [signup, setSignup] = useState(true);
     const [feedback, setFeedBack] = useState();
     const [loading, setLoading] = useState(false);
+    const [resendLinkLoading, setResendLinkLoading] = useState(false);
     const slideAnim = useRef(null);
     const [visible, setVisible] = useState(false);
     const [doReload, setDoReload] = useState(false);
     // const [forgottenActivate, setForgottenActivate] = useState(false);
     // const [retrievalEmail, setRetrievalEmail] = useState(false);
-    // const [isforgottenEmailSent, setIsForgottenEmailSent] = useState(false);
+    const [isforgottenEmailSent, setIsForgottenEmailSent] = useState(false);
     const [fullySignedUp, setFullySignedUp] = useState(null);
-    const [idToken, setIdToken] = useState("");
+    const [showVerifyPage, setShowVerifyPage] = useState(false);
+    const [showResetLinkPage, setShowResetLinkPage] = useState(false);
+    const isActivePage = showVerifyPage || showResetLinkPage;
+    const [retrievalEmail, setRetrievalEmail] = useState("");
+    const [moveToPartialForm, setMoveToPartialForm] = useState(false);
+
 
     const [toastY, setToastY] = useState(-100); // starts off-screen
 
@@ -119,7 +127,7 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
 
     const handleGoogleSignIn = async () => {
 
-        if(!signupData.fullname || !signupData.contact){
+        if(signup === true && (!signupData.fullname || !signupData.contact)){
             console.log("Fill the restaurant name and contact fields only before proceeding");
             return;
         }
@@ -137,14 +145,23 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
             const { creationTime, lastSignInTime } = user.metadata;
             const isNewUser = new Date(creationTime).getTime() === new Date(lastSignInTime).getTime();
 
-            const myemail = user.email;
+            const myemail = user.email.replace('.', ',');
 
             console.log("🎉 Signed in with Google!", myemail, "Is new user?", isNewUser);
             
             if (isNewUser) {
-            setVisible(true);
-            setFeedBack("newGoogleSignUp");
-            await set(ref(db, `restaurants/${myemail.replace('.', ',')}`), {
+            get(ref(db, `restaurants/${myemail}`))
+                .then(snapshot => {
+                    if(!snapshot.exists()){
+                        setFeedBack("wrongLogs");
+                        console.log("Account doesn't exist. Sign up");
+                        setMoveToPartialForm(true);
+                        return;
+                    
+                    }
+                })
+
+            await set(ref(db, `restaurants/${myemail}`), {
                 restaurantName: signupData.fullname,
                 category: "",
                 numberOfRatings: 0,
@@ -152,13 +169,16 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                 contact: signupData?.contact || ""
             })
             .then(() => console.log("✅ Data written to DB"))
-            .catch(err => console.log("❌ Failed to write:", err));     
+            .catch(err => console.log("❌ Failed to write:", err));  
             
-            sendCameraSignal(true);
+            setVisible(true);
+            setFeedBack("newGoogleSignUp");   
+            // sendCameraSignal(true);
             sendProfile(myemail);
+            sendRestaurantName(signupData?.fullname);
             } else {
 
-            get(ref(db, `restaurants/${myemail.replace(".",",")}`))
+            get(ref(db, `restaurants/${myemail}`))
                 .then(snapshot => {
                     if(!snapshot.exists()){
                         setFeedBack("wrongLogs");
@@ -178,6 +198,10 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
             }
 
         } catch (error) {
+            const user = auth.currentUser
+            if(user){
+                await deleteUser(user);
+            }
             console.log("❌ Google sign-in error:", error);
             setVisible(true);
             setFeedBack("accountNotCreated");
@@ -196,6 +220,8 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                     setVisible(true);
                     setFeedBack("accountCreated");
                     setLoading(false);
+
+                    const myemail = signupData.email.replace(".",",");
                     
                     // write to database
                     await set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
@@ -205,6 +231,10 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                         sumOfRatings: 0,
                         contact: signupData?.contact || ""
                     });
+                    setShowVerifyPage(false);
+                    sendProfile(myemail);
+                    sendRestaurantName(signupData?.fullname);
+
 
                     clearInterval(interval); // stop polling
                 }
@@ -220,7 +250,41 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
     checkVerification();
     console.log("hghghghgh")
     setDoReload(false);
-    },[doReload])
+    },[doReload]);
+
+    const handleResendLink = async ()=>{
+        const user = auth.currentUser;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+                
+        try {
+            await sendEmailVerification(user);
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setLoading(false); // ✅ guaranteed to run
+        }
+    }
+
+    const handlePasswordReset = ()=>{
+        setLoading(true);
+        sendPasswordResetEmail(auth, retrievalEmail)
+        .then(()=>{
+            setIsForgottenEmailSent(true);
+            setLoading(false);
+            console.log("Reset link sent successfully");
+        })
+        .catch((err)=>{
+            setLoading(false);
+            setVisible(true);
+            setFeedBack("passwordResetLinkSent");
+            console.log(`Error: ${err}`);
+        });
+    }
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -233,6 +297,7 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                 || !signupData?.confirm
             ){
                 console.log("Sign up fields not completed");
+                setLoading(false);
                 return;
 
             }
@@ -277,10 +342,12 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                     //         return;
                     //     }
                     //     else{
+                                setLoading(false);
                                 sendEmailVerification(userCredential.user);
                                 if(!auth.currentUser.emailVerified){
                                     console.log("Verify email");
                                     setDoReload(true);
+                                    setShowVerifyPage(true);
                                     return;
                                 }
                                 // setVisible(true);
@@ -317,6 +384,14 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                 setVisible(true);
                 setLoading(false);
 
+                 if(!auth.currentUser.emailVerified){
+                    console.log("Verify email");
+                    setDoReload(true);
+                    setShowVerifyPage(true);
+                    setLoading(false);
+                    return;
+                }
+
                 if(err.code === "auth/email-already-in-use"){
                     setFeedBack("emailAlreadyRegistered");
                     console.log("Email is already in use");
@@ -336,6 +411,7 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                 if(fullySignedUp === false){
                     // sendCameraSignal(true);
                     // sendProfile(loginData.email);
+                    setLoading(false);
                 }
                 else{
 
@@ -344,14 +420,22 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                             if(!snapshot.exists()){
                                 setFeedBack("wrongLogs");
                                 console.log("❌ Email does not exists as restaurant");
+                                setLoading(false);
                                 return;
                             }
                             else{
+
+                                const data = snapshot.val() || "";
+
+                                const myemail = loginData?.email.replace(".",",");
+
                                 setFeedBack("correctLogs");
                                 setVisible(true);
                                 console.log("🎉🎉 Logged in");
-                                // setLogger(true)
                                 setLoading(false);
+                                sendProfile(myemail);
+                                sendRestaurantName(data.restaurantName);
+                                setLogger(true)
                             }
                         });
                     // setFeedBack("correctLogs");
@@ -505,30 +589,32 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                 </button>
             </div>
         <div style={{
-            height: "590px",
-            width: "610px",
+            height:  isActivePage === true ?"390px":"590px",
+            width:  isActivePage === true ?"510px":"610px",
             backgroundColor: "white",
             position: "absolute",
             left: "50%",
-            bottom: "-400px",
+            bottom:  isActivePage === true ?"-200px":"-400px",
             transform: "translateX(-50%)",
             borderRadius: "20px",
           }}>
         <div
           style={{
-            height: "550px",
-            width: "600px",
+            height:  isActivePage === true ?"350px":"550px",
+            width:  isActivePage === true ?"500px":"600px",
             backgroundColor: "white",
             position: "absolute",
             left: "50%",
-            bottom: "-400px",
+            bottom:  isActivePage === true ?"-200px":"-400px",
             transform: "translateX(-50%)",
             borderRadius: "20px",
-            overflowY:"scroll",
+            overflowY:isActivePage? null:"scroll",
             top:20
           }}
         >
-            {signup === false ? <div style={{
+            {signup === false ? 
+            <>
+            {showResetLinkPage === false ? <div style={{
                 display: "flex",
                 alignItems: "center",
                 marginTop: "25px",
@@ -582,13 +668,15 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                         
                 })}
 
-                <label style={{
+                <button 
+                onClick={()=>setShowResetLinkPage(true)}
+                style={{
                     marginTop:"30px",
                     color: "#aba9a9ff",
                     fontWeight: "bold"
                 }}
                 
-                >Forgot password?</label>
+                >Forgot password?</button>
 
                 <button 
                 onClick={
@@ -628,10 +716,12 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                         paddingLeft: "20px",
                         paddingRight: "20px"
                     }}
-                    >Or sign in</label>
+                    >Or sign in with</label>
                 </div>
 
-                <button style={{
+                <button 
+                onClick={()=>handleGoogleSignIn()}
+                style={{
                     backgroundColor:"rgba(255, 255, 255, 1)",
                     width: 450,
                     height: 50,
@@ -656,11 +746,115 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                     />
                     Google
                 </button>
+            </div> 
+            :
+            <>
+            {
+                isforgottenEmailSent===false ?
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                marginTop: "20px",
+                flexDirection:"column"
+            }}>
+                <label style={{
+                    fontSize:"30px",
+                    fontWeight:"bold"
+                }}>Enter your email</label>
+                <div className="input-group">
+
+                            <input 
+                            placeholder=" " 
+                            value={retrievalEmail}
+                            onChange={(e)=>setRetrievalEmail(e.target.value)}
+                            style={{
+                                borderWidth: 1,
+                                // paddingBottom: "20px"
+                            }}
+                            />
+                </div>
+
+                <button
+                onClick={()=>{
+                    handlePasswordReset();
+                }}           
+                style={{
+                    backgroundColor:"rgba(70, 180, 127, 1)",
+                    width: 450,
+                    height: 50,
+                    borderRadius: 10,
+                    marginLeft: "20px",
+                    fontWeight:"bold",
+                    color:"white",
+                    marginTop:"50px"
+                }}>
+                    
+                { loading === false ? "Send verification link" 
+                    :
+                    <div style={{
+                        display:"flex",
+                        alignItems: "center",
+                        justifyContent:"center"
+                    }}>
+                        <div className="loaderSubmit"/>
+                    </div>}
+                </button>
             </div>
+        : 
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                marginTop: "-40px",
+                flexDirection:"column"
+            }}>
+                <img src={mail} style={{
+                    width:"230px",
+                    height:"220px"
+                }}/>
+                <label
+                style={{
+                    fontWeight:"bold",
+                    fontSize: "25px",
+                    textAlign: "center",
+                    marginTop:"-20px"
+                }}
+                >Password reset email sent! Click the link in your inbox to continue.</label>
+                <button
+                onClick={()=>{
+                    setRetrievalEmail("");
+                    setShowResetLinkPage(false);
+                    signup(false);
+                }}           
+                style={{
+                    backgroundColor:"rgba(70, 180, 127, 1)",
+                    width: 450,
+                    height: 50,
+                    borderRadius: 10,
+                    marginLeft: "20px",
+                    fontWeight:"bold",
+                    color:"white",
+                    marginTop:"30px"
+                }}>
+                    
+                { loading === false ? "Back to login" 
+                    :
+                    <div style={{
+                        display:"flex",
+                        alignItems: "center",
+                        justifyContent:"center"
+                    }}>
+                        <div className="loaderSubmit"/>
+                    </div>}
+                </button>
+            </div> 
+            }
+            </>
+            }
+            </>
 
             :
-
-            <div style={{
+            <>
+            {showVerifyPage===false?<div style={{
                 display: "flex",
                 alignItems: "center",
                 marginTop: "25px",
@@ -769,13 +963,30 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                                     color:"#a9a9a9ff"
                                 }}/>
                                 :
-                            null
+                                <div style={{
+
+                                }}>
+
+
+                                </div>
+
+                                
+                            // null
                             
                             }
+
                         </div>)
 
                         
+
+                        
                 })}
+
+        {/* <select  onChange={e => setValue(e.target.value)}>
+        <option value="">Select option</option>
+        <option value="student">Student</option>
+        <option value="staff">Staff</option>
+        </select> */}
 
 
 
@@ -794,7 +1005,15 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                     color:"white",
                     marginTop:"30px"
                 }}>
-                    Sign up
+                { loading === false ? "Sign up" 
+                    :
+                    <div style={{
+                        display:"flex",
+                        alignItems: "center",
+                        justifyContent:"center"
+                    }}>
+                        <div className="loaderSubmit"/>
+                    </div>}
                 </button>
                 <div style={{
                     display:"flex",
@@ -851,7 +1070,55 @@ function LoginSignup({sendCameraSignal, sendProfile}) {
                        
            
 
+            </div> 
+            :
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                marginTop: "-40px",
+                flexDirection:"column"
+            }}>
+                <img src={mail} style={{
+                    width:"230px",
+                    height:"220px"
+                }}/>
+                <label
+                style={{
+                    fontWeight:"bold",
+                    fontSize: "25px",
+                    textAlign: "center",
+                    marginTop:"-20px"
+                }}
+                >Verification link sent — check your email to continue.</label>
+                <button
+                onClick={()=>{
+                    handleResendLink();
+                }}           
+                style={{
+                    backgroundColor:"rgba(70, 180, 127, 1)",
+                    width: 450,
+                    height: 50,
+                    borderRadius: 10,
+                    marginLeft: "20px",
+                    fontWeight:"bold",
+                    color:"white",
+                    marginTop:"30px"
+                }}>
+                    
+                { loading === false ? "Resend verification email" 
+                    :
+                    <div style={{
+                        display:"flex",
+                        alignItems: "center",
+                        justifyContent:"center"
+                    }}>
+                        <div className="loaderSubmit"/>
+                    </div>}
+                </button>
             </div>
+            // null    
+        }
+            </>
 }
 
 

@@ -82,6 +82,118 @@
   animation: shimmer 1.5s infinite;
 }
 
+.addItemPicSkeleton {
+  margin-top: 20px;
+  margin-left: 20px;
+  width: 42vw;
+  height: 13vh;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemFoodNameSkeleton {
+  margin-top: 35px;
+  margin-left: 20px;
+  width: 300px;
+  height: 55px;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemFoodPriceSkeleton {
+  margin-top: 35px;
+  margin-left: 45px;
+  width: 300px;
+  height: 55px;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemAddOnDropdownSkeleton {
+  margin-top: 20px;
+  margin-left: 20px;
+  width: 42vw;
+  height: 6vh;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemAddOnNameSkeleton {
+  margin-top: 20px;
+  margin-left: 20px;
+  width: 300px;
+  height: 55px;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemAddOnPriceSkeleton {
+  margin-top: 20px;
+  margin-left: 45px;
+  width: 9vw;
+  height: 55px;        /* size of content */
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
+.addItemAddNewFieldSkeleton {
+  margin-top: 33px;
+  margin-left: 20px;
+  width: 2vw;
+  height: 30px;        /* size of content */
+  border-radius: 100px;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 50%,
+    #eee 75%
+  );
+  background-size: 200% 100%;   /* make it wider for sliding */
+  animation: shimmer 1.5s infinite;
+}
+
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }

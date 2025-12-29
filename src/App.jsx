@@ -39,7 +39,7 @@ function App() {
       />
       {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
       {tab === "manage" && <ManageBusiness 
-      style={{ flex: 1, marginTop: "40px", marginLeft:"40px", minWidth:"100vw"}}
+      style={{ flex: 1, marginTop: "20px", marginLeft:"40px", minWidth:"100vw"}}
       getSeller={seller}
       />}
     </div>

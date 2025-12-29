@@ -300,6 +300,14 @@ function ManageBusiness({style, getSeller}){
     }
 
 
+    const showSkeletonView =
+    selectedEditFood &&
+    inputAddOns &&
+    fileURL &&
+    selectedCategory;
+
+
+
     const handleSubmit = ()=>{
         if(Object.keys(foodData).length === 0 || inputAddOns.length === 0 || fileURL === null ||  selectedCategory === null){
             console.log("Fields not filled totally");
@@ -400,6 +408,13 @@ function ManageBusiness({style, getSeller}){
                 ...style
             }}
             >
+                <h1 style={{
+                    paddingBottom: "20px",
+                    fontSize: "25px",
+                    fontWeight:"bold"
+                }}>
+                    My Menu
+                </h1>
                 <div style={{
                     backgroundColor: "white",
                     width: "78vw",
@@ -536,7 +551,7 @@ function ManageBusiness({style, getSeller}){
                         width: "45vw",
                         height: "70vh",
                         backgroundColor: "white",
-                        overflow: "scroll"
+                        overflowY: "scroll"
 
                         // position: "fixed",
                         // left: 450,
@@ -571,7 +586,31 @@ function ManageBusiness({style, getSeller}){
                         </h1>
 
                         
-                        <button style={{
+                        { !showSkeletonView ? 
+                        <>
+                            <div className="addItemPicSkeleton"/> 
+                            <div style={{
+                                display:"flex",
+                                flexDirection: "row",
+                            }}>
+                                <div className="addItemFoodNameSkeleton"/> 
+                                <div className="addItemFoodPriceSkeleton"/>
+                            </div>
+                            <div className="addItemAddOnDropdownSkeleton"/> 
+                            <div style={{
+                                display:"flex",
+                                flexDirection: "row",
+                            }}>
+                                <div className="addItemAddOnNameSkeleton"/>
+                                <div className="addItemAddOnPriceSkeleton"/> 
+                                <div className="addItemAddNewFieldSkeleton"/> 
+
+                            </div>
+                        </>
+
+                            :
+                            <>
+                            <button style={{
                             height: "15vh",
                             borderRadius:10 ,
                             marginLeft: "20px",
@@ -632,7 +671,7 @@ function ManageBusiness({style, getSeller}){
                             </div>
 
 
-                            <div style={{
+                           {!selectedEditFood && <div style={{
                                 marginLeft:"20px",
                                 marginTop: "15px",
                                 backgroundColor: "#eee",
@@ -661,7 +700,7 @@ function ManageBusiness({style, getSeller}){
                                     Category
                                 </label>
 
-                            </div>
+                            </div>}
 
                                 {
                                     checked.category === true && 
@@ -934,6 +973,9 @@ function ManageBusiness({style, getSeller}){
                                     color:"rgba(170, 170, 170, 1)",
                                     fontStyle:"italic"
                                 }}>You can add up to 10 add-ons.</label>
+                                
+                                </>
+                                }
 
                     </div>
                     </div>

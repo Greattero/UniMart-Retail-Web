@@ -16,9 +16,14 @@ function Header({style, getProlifeName}){
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
+            // position:"relative",
+
             // padding: "0 20px",
             ...style
         }}>
+            <div  style={{
+                    position:"relative"
+                }}>
             <div style={{
                 borderLeftWidth: 1,
                 borderLeftColor: "rgba(220, 221, 226, 1)",
@@ -31,6 +36,9 @@ function Header({style, getProlifeName}){
             }}
             
             >
+                <div style={{
+                    position:"relative"
+                }}>
 
                 <p style={{
                     // position:"absolute",
@@ -47,11 +55,13 @@ function Header({style, getProlifeName}){
                     // position:"absolute",
                     // right: 10,
                     // marginTop: 15,
-                    marginTop: "6px",
-                    paddingLeft: "65vw"
+                    marginTop: "-30px",
+                    paddingLeft: "70vw"
                     
                 }}>{profile}</p>
+                </div>
 
+            </div>
             </div>
             
         </div>

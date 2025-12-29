@@ -24,7 +24,7 @@ import {jwtDecode} from "jwt-decode";
 
 
 
-function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
+function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}) {
 
     const db = getDatabase(app);
 
@@ -107,6 +107,7 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
         }))
     }
 
+                       console.table(signupData) 
 
     // const login = useGoogleLogin({
     // flow: "implicit",
@@ -166,7 +167,8 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
                 category: "",
                 numberOfRatings: 0,
                 sumOfRatings: 0,
-                contact: signupData?.contact || ""
+                contact: signupData?.contact || "",
+                businessType: signupData?.businessType
             })
             .then(() => console.log("✅ Data written to DB"))
             .catch(err => console.log("❌ Failed to write:", err));  
@@ -175,7 +177,8 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
             setFeedBack("newGoogleSignUp");   
             // sendCameraSignal(true);
             sendProfile(myemail);
-            sendRestaurantName(signupData?.fullname);
+            sendBusinessName(signupData?.fullname);
+            sendBusinessType(signupData?.businessType)
             } else {
 
             get(ref(db, `restaurants/${myemail}`))
@@ -221,19 +224,24 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
                     setFeedBack("accountCreated");
                     setLoading(false);
 
-                    const myemail = signupData.email.replace(".",",");
+                    const myemail = signupData?.email?.replace(".",",");
                     
+                    if (!myemail) return;
+
                     // write to database
-                    await set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
+                    await set(ref(db, `restaurants/${myemail}`), {
                         restaurantName: signupData?.fullname,
                         category: "",
                         numberOfRatings: 0,
                         sumOfRatings: 0,
-                        contact: signupData?.contact || ""
+                        contact: signupData?.contact || "",
+                        businessType: signupData?.businessType
+
                     });
                     setShowVerifyPage(false);
                     sendProfile(myemail);
-                    sendRestaurantName(signupData?.fullname);
+                    sendBusinessName(signupData?.fullname);
+                    sendBusinessType(signupData?.businessType);
 
 
                     clearInterval(interval); // stop polling
@@ -360,6 +368,7 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
                                 // numberOfRatings: 0,
                                 // sumOfRatings: 0,
                                 // contact: signupData?.contact || ""
+                                // businessType: signupData?.businessType
                                 // });
                                 // sendCameraSignal(true);
                                 // sendProfile(signupData.email);
@@ -434,8 +443,9 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
                                 console.log("🎉🎉 Logged in");
                                 setLoading(false);
                                 sendProfile(myemail);
-                                sendRestaurantName(data.restaurantName);
-                                setLogger(true)
+                                sendBusinessName(data?.restaurantName);
+                                sendBusinessType(data?.businessType);
+                                setLogger(true);
                             }
                         });
                     // setFeedBack("correctLogs");
@@ -981,18 +991,33 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
 
                         
                 })}
-
-        {/* <select  onChange={e => setValue(e.target.value)}>
-        <option value="">Select option</option>
-        <option value="student">Student</option>
-        <option value="staff">Staff</option>
-        </select> */}
+                    <div className="select-group">
+                        <select
+                        value={signupData.businessType}
+                        // style={{ color: signupData.businessType !== "" ? "black" : "#777" }}
+                        onChange={e =>
+                            setSignupData(prev => ({
+                            ...prev,
+                            businessType: e.target.value
+                            }))
+                        }
+                        >
+                        <option value="" >
+                            Business Type
+                        </option>
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Shop">Shop</option>
+                        </select>
+                    </div>
 
 
 
                 <button 
                 onClick={
-                    ()=>handleSubmit()
+                    ()=>{handleSubmit()
+
+                    //    console.table(signupData) 
+                    }
                     // console.table(signupData)
                 }           
                 style={{
@@ -1030,7 +1055,7 @@ function LoginSignup({sendRestaurantName, sendProfile, setLogger}) {
 
                     <label style={{
                         position:"absolute",
-                        top: 625,
+                        top: 690,
                         fontWeight:"bold",
                         backgroundColor:"white",
                         paddingLeft: "20px",

@@ -12,11 +12,12 @@ function App() {
 
   const [tab,setTab] = useState("dashboard");
   const [seller, setSeller] = useState("");
-  const [restaurant, setRestaurant] = useState("");
+  const [business, setBusiness] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState("");
+  const [typeOfBusiness, setTypeOfBusiness] = useState("");
 
   console.log("Seller: ", seller);
-  console.log("Restaurant: ", restaurant);
+  console.log("Business: ", business);
 
 
   return (
@@ -35,7 +36,7 @@ function App() {
 
     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <Header style={{ height: "9vh" }} 
-      getProlifeName={restaurant}
+      getProlifeName={business}
       />
       {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
       {tab === "manage" && <ManageBusiness 
@@ -47,8 +48,9 @@ function App() {
 :
   <LoginSignup
   sendProfile={setSeller}
-  sendRestaurantName={setRestaurant}
+  sendBusinessName={setBusiness}
   setLogger={setIsLoggedIn}
+  sendBusinessType={setTypeOfBusiness}
   />}
   {/* <CardScanner/> */}
 

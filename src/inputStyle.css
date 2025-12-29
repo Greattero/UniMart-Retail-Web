@@ -7,6 +7,24 @@
   flex-direction: row;
 }
 
+.select-group {
+  position: relative;
+  width: 300px;
+  margin-left: -130px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: row;
+}
+
+.select-group select {
+  width: 100%;
+  padding: 12px 10px;
+  font-size: 16px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  outline: none;
+}
+
 .input-group input {
   width: 100%;
   padding: 12px 10px;

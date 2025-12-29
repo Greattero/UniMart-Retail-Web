@@ -13,7 +13,7 @@ import { snapshotEqual } from "firebase/firestore/lite";
 
 
 
-function ManageBusiness({style, getSeller}){
+function ManageBusiness({style, getSeller, getBusinessType}){
 
     const [seller, setSeller] = useState("");
 
@@ -409,12 +409,16 @@ function ManageBusiness({style, getSeller}){
             }}
             >
                 <h1 style={{
-                    paddingBottom: "20px",
+                    paddingBottom: "10px",
                     fontSize: "25px",
                     fontWeight:"bold"
                 }}>
+
+                    
                     My Menu
                 </h1>
+
+                
                 <div style={{
                     backgroundColor: "white",
                     width: "78vw",
@@ -425,14 +429,15 @@ function ManageBusiness({style, getSeller}){
                     columnGap: "5px",
                     // rowGap: "0px"
                 }}>
+
                     <button 
                     onClick={()=>setOpenPopUp(true)}
                     style={{
                         margin: "20px",
                         borderColor: "rgba(219, 217, 217, 1)",
                         borderWidth: 2,
-                        height: "22vh",
-                        width: "10vw",
+                        height: "160px",
+                        width: "160px",
                         borderRadius: "10px",
                         display:"flex",
                         justifyContent: "center",
@@ -482,8 +487,8 @@ function ManageBusiness({style, getSeller}){
                         margin: "20px",
                         borderColor: "rgba(219, 217, 217, 1)",
                         borderWidth: 2,
-                        height: "22vh",
-                        width: "10vw",
+                        height: "160px",
+                        width: "160px",
                         borderRadius: "10px",
                         display: "flex",
                         justifyContent: "center",
@@ -494,8 +499,8 @@ function ManageBusiness({style, getSeller}){
                             // flexDirection: "column"
                         }}>
                             <img src={food.image} style={{
-                            height:"15vh",
-                            width:"10vw",
+                            height:"105px",
+                            width:"160px",
                             borderTopLeftRadius: "5px",
                             borderTopRightRadius: "5px",
                         }}/>
@@ -523,6 +528,7 @@ function ManageBusiness({style, getSeller}){
                     </button>
                         )
                     })}
+                    
                 {openPopUp === true &&
                 <div style={{
                     position: "fixed",
@@ -547,6 +553,7 @@ function ManageBusiness({style, getSeller}){
                         borderRadius: "20px",
 
                     }}>
+                    
                     <div style={{
                         width: "45vw",
                         height: "70vh",

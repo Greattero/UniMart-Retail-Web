@@ -71,6 +71,9 @@ function Orders({style}){
                 ...style
             }}
             >
+                <div  style={{
+                    position:"relative"
+                }}>
                 <p style={{
                     paddingBottom: "20px",
                     fontSize: "25px",
@@ -187,11 +190,11 @@ function Orders({style}){
                         }}/>
                         <p>Today</p>
                     </div>
-
+                    </div>
 
 
                 </div>
-
+                
                 <div style={{
                 height: "62vh",
                 width: "76vw",
@@ -202,7 +205,7 @@ function Orders({style}){
                 paddingTop:"10px",
                 alignItems:"center",
                 justifyContent:"center",
-                borderRadius: "20px"
+                borderRadius: "20px",
                 }}>
                 <div style={{
                 height: "57vh",
@@ -218,43 +221,79 @@ function Orders({style}){
                 }}>
 
                     <div style={{
-                        height: "5.5vh",
+                        height: "50px",
                         width: "73vw",
                         backgroundColor: "#ffc0cbff",
                         borderRadius: " 10px",
-                        marginTop:"10px",
-                        marginLeft:"7px",
+                        marginTop:"0px",
+                        // marginLeft:"7px",
                         display: "flex",
-                        alignItems:"center",
+                        justifyContent:"center",
                         flexDirection: "column",
                         position: "sticky",   // <-- make it sticky
                         top: 0,               // <-- stick to top
                         zIndex: 10,
                     }}>
+
                         <div style={{
                             display: "flex",
                             flexDirection:"row",
-                            marginTop: "7px",
+                            marginTop: "20px",
                             marginBottom:"20px",
                             marginRight:"40px",
-                            gap: 130,
+                            marginLeft:"-20px",
+                            gap: 30,
                         }}>
-                        <p>Order Id</p>
-                        <p>Food</p>
-                        <p>Buyer</p>
-                        <p>Contact</p>
-                        <p>Date</p>
-                        <div style={{
+
+                    <div style={{
                             color: "black",
                             width: "10vw",
+                            display: "flex",
+                            justifyContent: "center",
+                    }}>
+                        <p>Order Id</p>
+                        </div>
+                    <div style={{
+                            color: "black",
+                            width: "10vw",
+                            display: "flex",
+                            justifyContent: "center",
+                    }}>
+                        <p>Food</p>
+                        </div>
+                    <div style={{
+                            color: "black",
+                            width: "10vw",
+                            display: "flex",
+                            justifyContent: "center",
+                    }}>
+                        <p>Customer</p>
+                        </div>
+                    <div style={{
+                             color: "black",
+                            width: "8vw",
+                            display: "flex",
+                            justifyContent: "center",
+                    }}>
+                        <p>Contact</p>
+                        </div>
+                    <div style={{
+                            color: "black",
+                            width: "10vw",
+                            display: "flex",
+                            justifyContent: "center",
+                    }}>
+                        <p>Date</p>
+                        </div>
+                        <div style={{
+                            color: "black",
+                            width: "15vw",
                             display: "flex",
                             justifyContent: "center",
                         }}> 
                         <p>Status</p>
                         </div>
                         </div>
-
- 
 
                     </div>
                        <div style={{

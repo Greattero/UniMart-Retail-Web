@@ -16,70 +16,84 @@ import { snapshotEqual } from "firebase/firestore/lite";
 function ManageBusiness({style, getSeller, getBusinessType}){
 
     const [seller, setSeller] = useState("");
+    const [businessType, setBusinessType] = useState("")
 
     useEffect(()=>{
         setSeller(getSeller);
     },[getSeller])
 
+    useEffect(()=>{
+        setBusinessType(getBusinessType);
+    },[getBusinessType])
+
     const db = getDatabase(app);
 
-    const restaurantRef = ref(db, `restaurants/${seller}`);
+    const businessRef = businessType==="restaurant" ? 
+                        ref(db, `restaurants/${seller}`)
+                        :
+                        ref(db, `shops/${seller}`);
 
     const [ownerMenu, setOwnerMenu] = useState(null);
     const [loader, setLoader] = useState(false);
-    const [selectedEditFood, setSelectedEditFood] = useState(false);
+    const [selectedEditItem, setSelectedEditItem] = useState(false);
     const [removeLoader, setRemoveLoader] = useState(false);
     const [editImage, setEditImage] = useState("");
     const [removedFood, setRemovedFood] = useState("");
     const [oldRef, setOldRef] = useState("")
 
-    get(restaurantRef).then((snapshot)=>{
+    get(businessRef).then((snapshot)=>{
 
         const data = snapshot.val() || {};
 
-        const restaurantFoods = data.foods || [];
+        const businessItems = businessType==="restaurant" ? data.foods || [] : data.items || [];
 
-        const foodsArray = restaurantFoods.map(food => ({
-        name: food.name,
-        price: food.price,
-        image: food.image,
+        const itemsArray = businessItems.map(item => ({
+        name: item.name,
+        price: item.price,
+        image: item.image,
         }));
 
         // console.log(foodsArray);
 
-        setOwnerMenu(foodsArray);
+        setOwnerMenu(itemsArray);
     })
 
 
 
     const fileInputRef = useRef(null);
 
-    const inputFields=[{name: "Food name", type:"text", key: "name"},
+    const inputFields=[{name: "Item name", type:"text", key: "name"},
                        {name: "Price", type:"number", key: "price"},
                     ]
 
     const [addOns, setAddOns]= useState([{id: 0, field1: "Item", field2:"Price"}]);
 
-    const [foodData, setFoodData] = useState({});
+    const [itemData, setItemData] = useState({});
     const [inputAddOns, setInputAddOns] = useState([]);
     const [fileURL, setFileURL] = useState(null);
     const [file,setFile] = useState(null);
-    const [categoryType, setCategoryType] = useState({rice: false,
+    const [foodCategoryType, setFoodCategoryType] = useState({rice: false,
         staple: false,
         snackies: false
+    });
+    const [stuffCategoryType, setStuffCategoryType] = useState({fashion: false,
+        books: false,
+        cosmetics: false,
+        electronics: false,
+        others: false,
     });
     const [selectedCategory, setSelectedCatergory] = useState(null);
 
 
-    const handleFoodName = (field, value) => {
-    setFoodData(prev => ({ 
+    const handleItemName = (field, value) => {
+    setItemData(prev => ({ 
         ...prev,      // keep existing fields
         [field]: value  // update the specific field dynamically
     }));
     };
 
-    const handleFoodPrice = (field, value)=>{
-        setFoodData((prev)=>({
+    const handleItemPrice = (field, value)=>{
+        setItemData((prev)=>({
             ...prev,
             [field] : value
         }))
@@ -95,7 +109,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
     const handleFoodImage = (e)=>{
         const file = e.target.files[0];
         if(file){
-        setFoodData((prev)=>({
+        setItemData((prev)=>({
             ...prev,  
             ["image"]: file
         }))}
@@ -113,26 +127,31 @@ function ManageBusiness({style, getSeller, getBusinessType}){
     };
 
 
-    const handleEdit = (food)=>{
-        const foodRef = ref(db,`restaurants/${seller}/foods`);
-        const addOnsRef = ref(db,`restaurants/${seller}/${food}`);
-        const categoryRef = ref(db, `restaurants/${seller}/category`);
+    const handleEdit = (item)=>{
+        const itemRef = ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${businessType==="restaurant"?"foods":"items"}`);
+        const addOnsRef = ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${item}`);
+        const categoryRef = ref(db, `${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/category`);
 
-        setOldRef(food);
+        setOldRef(item);
+        // console.log(item);
+        // console.log(itemRef)
 
 
-        get(foodRef).then((snapshot) =>{
+        get(itemRef).then((snapshot) =>{
 
             const foodList = snapshot.val() || {};
+            console.log(foodList);
 
-            const selectedFood = foodList?.find(item => item.name === `${food}`);
 
-            setFoodData(selectedFood);
+            const selectedFood = foodList?.find(myItem => myItem.name === `${item}`);
+            console.log("sjkhkjah", selectedFood)
+            setItemData(selectedFood);
             setFileURL(selectedFood.image);
+            // console.log("jsjsjhjhsjhs");
 
             
 
-            console.log(`rrrrr: ${food}`)
+            console.log(`rrrrr: ${item}`)
 
             console.log(`qqqqq: ${foodList}`)
 
@@ -168,12 +187,14 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
             const data = snapshot.val() || "";
 
-
-            setCategoryType((prev) =>({
+            businessType==="restaurant" ?
+            setFoodCategoryType((prev) =>({
                     rice: data === "rice" ? true : false,
                     staple: data === "staple" ? true : false,
                     snackies: data === "snackies" ? true : false
-                }));
+                }))
+                :
+                null
             
             setSelectedCatergory(data);
 
@@ -218,7 +239,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
         setFileURL(url.publicUrl)
 
-        setFoodData((prev)=>({
+        setItemData((prev)=>({
             ...prev,  
             ["image"]: url.publicUrl
         }));
@@ -252,37 +273,51 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
         setRemoveLoader(true);
 
-        const foodRef= ref(db,(`restaurants/${seller}/foods`));
+        const itemRef = ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${businessType==="restaurant"?"foods":"items"}`);
 
-        const foodDisplayRef = ref(db,(`foodDisplay`))
+        // const foodDisplayRef = ref(db,(`foodDisplay`))
 
-        get(foodRef).then((snapshot)=>{
+        get(itemRef).then((snapshot)=>{
             const data = snapshot.val() || [];
             const filteredFoods = data.filter(f => f.name !== removedFood)
 
             //remove from foods
-            update(ref(db, `restaurants/${seller}`),{
-                foods: filteredFoods
+            update(ref(db, `${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}`),{
+                    [businessType === "restaurant" ? "foods" : "items"]: filteredFoods
             })
                 .then(()=>{
                     // setRemoveLoader(false);
-                    console.log("Removed from foods successfully");
+                    console.log("Removed from items successfully");
                 })
                 .catch((err)=>{
                     // setRemoveLoader(false);
-                    console.log(`Remove food failed: ${err}`)
+                    console.log(`Remove items failed: ${err}`)
                 });
 
             //remove the foodAddons
-            remove(ref(db,`restaurants/${seller}/${removedFood}`))
+            remove(ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${removedFood}`))
                 .then(()=>{
+                    setSelectedEditItem(false);
+                    setSelectedCatergory(null);
                     setRemoveLoader(false);
-                    setFoodData({});
+                    setItemData({});
                     setInputAddOns([]);
                     setFileURL(null);
                     setChecked({addOns: false,
                         category: false
                     });
+                    setStuffCategoryType((prev) =>({
+                        fashion: false,
+                        books: false,
+                        cosmetics: false,
+                        electronics: false,
+                        others: false,
+                        }))
+                    setFoodCategoryType((prev) =>({
+                        rice: false,
+                        staple: false,
+                        snackies: false
+                    }))
                     setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
                     setFileURL(null);
                     setFile(null);
@@ -301,49 +336,155 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
 
     const showSkeletonView =
-    selectedEditFood &&
-    inputAddOns &&
-    fileURL &&
-    selectedCategory;
+    // selectedEditItem &&
+    inputAddOns.length === 0 &&
+    fileURL===null &&
+    selectedCategory === null ;
+
+    // console.log("wwww: ", showSkeletonView, "sss", selectedEditItem)
 
 
 
     const handleSubmit = ()=>{
-        if(Object.keys(foodData).length === 0 || inputAddOns.length === 0 || fileURL === null ||  selectedCategory === null){
+        if(Object.keys(itemData).length === 0 || inputAddOns.length === 0 || fileURL === null ||  selectedCategory === null){
             console.log("Fields not filled totally");
             return
         }
 
         setLoader(true)
 
-        // Insert in restaurant
-        get(ref(db, `restaurants/${seller}/foods`)).then(snapshot => {
+        // Insert in restaurant 
+        if(businessType === "restaurant"){
+            get(ref(db, `restaurants/${seller}/foods`)).then(snapshot => {
+            const existing = snapshot.val() || [];
+            const updatedItems = selectedEditItem === false ? [...existing, itemData] : existing.map(
+                f => f.name === oldRef ?
+                {...f, ...itemData}
+                : f
+            );
+
+            update(ref(db, `restaurants/${seller}`), {
+                foods: updatedItems,
+                [itemData.name]: inputAddOns,
+                category: selectedCategory,
+            })
+            .then(()=>{
+                if (selectedEditItem && oldRef !== itemData.name) {
+                remove(ref(db, `restaurants/${seller}/${oldRef}`));
+                }
+                console.log("Stored in firebase successfully")
+                setItemData({});
+                setInputAddOns([]);
+                setFileURL(null);
+                setSelectedEditItem(false);
+                setSelectedCatergory(null);
+                setChecked({addOns: false,
+                    category: false
+                });
+                setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
+                // setFileURL(null);
+                setFile(null);
+                    setStuffCategoryType((prev) =>({
+                        fashion: false,
+                        books: false,
+                        cosmetics: false,
+                        electronics: false,
+                        others: false,
+                        }))
+                    setFoodCategoryType((prev) =>({
+                        rice: false,
+                        staple: false,
+                        snackies: false
+                    }))
+            })
+            .catch((err)=>{
+                console.log(`err ${err}`)
+            })      
+            ;
+            console.log("Submitted❤️❤️");
+
+
+            //Insert in Food Display
+
+            get(ref(db, `foodDisplay/${selectedCategory}`)).then(snapshot => {
+            const existing = snapshot.val() || [];
+            const itemWithBusiness = {
+            ...itemData,
+            shopName: seller
+            };
+            const updatedItems = selectedEditItem===false ? [...existing, itemWithBusiness] : existing.map(
+                f => f.name === oldRef && f.shopName ===seller ? {
+                    ...f, ...itemWithBusiness
+                } : f
+            
+            );
+
+            update(ref(db, `foodDisplay`), {
+                [selectedCategory]: updatedItems,
+                // shopName : seller
+            })
+            .then(()=>{
+                // if (selectedEditItem &&  && oldRef !== itemData.name) {
+                // remove(ref(db, `restaurants/${seller}/${oldRef}`));
+                // }
+                console.log(`Stored in ${selectedCategory} successfully`)
+                setSelectedCatergory(null);
+                setLoader(false);
+            })
+            .catch((err)=>{
+                console.log(`err ${err}`)
+                setLoader(false);
+
+            });
+            
+            });
+
+            });
+        }
+
+    else{
+
+        //Insert in Shop
+        get(ref(db, `shops/${seller}/items`)).then(snapshot => {
         const existing = snapshot.val() || [];
-        const updatedFoods = selectedEditFood === false ? [...existing, foodData] : existing.map(
+        const updatedItems = selectedEditItem === false ? [...existing, itemData] : existing.map(
             f => f.name === oldRef ?
-            {...f, ...foodData}
+            {...f, ...itemData}
             : f
         );
-
-        update(ref(db, `restaurants/${seller}`), {
-            foods: updatedFoods,
-            [foodData.name]: inputAddOns,
+        update(ref(db, `shops/${seller}`), {
+            items: updatedItems,
+            [itemData.name]: inputAddOns,
             category: selectedCategory
         })
         .then(()=>{
-            if (selectedEditFood && oldRef !== foodData.name) {
-            remove(ref(db, `restaurants/${seller}/${oldRef}`));
+            if (selectedEditItem && oldRef !== itemData.name) {
+            remove(ref(db, `shops/${seller}/${oldRef}`));
             }
             console.log("Stored in firebase successfully")
-            setFoodData({});
+            setItemData({});
             setInputAddOns([]);
             setFileURL(null);
+            setSelectedEditItem(false);
+            setSelectedCatergory(null);
             setChecked({addOns: false,
                 category: false
             });
             setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
             setFileURL(null);
             setFile(null);
+            setStuffCategoryType((prev) =>({
+                fashion: false,
+                books: false,
+                cosmetics: false,
+                electronics: false,
+                others: false,
+                }))
+            setFoodCategoryType((prev) =>({
+                rice: false,
+                staple: false,
+                snackies: false
+            }))
         })
         .catch((err)=>{
             console.log(`err ${err}`)
@@ -352,27 +493,27 @@ function ManageBusiness({style, getSeller, getBusinessType}){
         console.log("Submitted❤️❤️");
         });
 
-        //Insert in Food Display
-
-        get(ref(db, `foodDisplay/${selectedCategory}`)).then(snapshot => {
+        //Insert into Shop Display
+        get(ref(db, `shopDisplay`)).then(snapshot => {
         const existing = snapshot.val() || [];
-        const foodWithRestaurant = {
-        ...foodData,
-        restaurantName: seller
+        const itemWithBusiness = {
+        ...itemData,
+        shopName: seller,
+        category: selectedCategory
         };
-        const updatedFoods = selectedEditFood===false ? [...existing, foodWithRestaurant] : existing.map(
-            f => f.name === oldRef && f.restaurantName ===seller ? {
-                ...f, ...foodWithRestaurant
+        const updatedItems = selectedEditItem===false ? [...existing, itemWithBusiness] : existing.map(
+            f => f.name === oldRef && f.shopName ===seller ? {
+                ...f, ...itemWithBusiness
             } : f
         
         );
 
-        update(ref(db, `foodDisplay`), {
-            [selectedCategory]: updatedFoods,
-            // restaurantName : seller
+        update(ref(db), {
+            shopDisplay: updatedItems,
+            // shopName : seller
         })
         .then(()=>{
-            // if (selectedEditFood &&  && oldRef !== foodData.name) {
+            // if (selectedEditItem &&  && oldRef !== itemData.name) {
             // remove(ref(db, `restaurants/${seller}/${oldRef}`));
             // }
             console.log(`Stored in ${selectedCategory} successfully`)
@@ -385,10 +526,9 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
         });
         
-        });
-
+        });}
         // update(ref(db, `foodDisplay/${selectedCategory}`), {
-        //     restaurantName : seller
+        //     shopName : seller
         // })
         // .then(()=>{
         //     console.log(`Stored in particular ${selectedCategory} successfully`)
@@ -478,7 +618,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                     key={i}
                     onClick={()=>{
                         const name = food.name;       // use current food name
-                        setSelectedEditFood(true);
+                        setSelectedEditItem(true);
                         setOpenPopUp(true);     
                         handleEdit(name);
                         setRemovedFood(name);               
@@ -577,14 +717,28 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                 color: "#554f4fff"                                
                             }}
                             onClick={()=>{
+                                setSelectedEditItem(false);
+                                setSelectedCatergory(null);
                                 setOpenPopUp(false);
-                                setFoodData({});
+                                setItemData({});
                                 setInputAddOns([]);
                                 setFileURL(null);
                                 setChecked({addOns: false,
                                     category: false
                                 });
                                 setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
+                                setStuffCategoryType((prev) =>({
+                                    fashion: false,
+                                    books: false,
+                                    cosmetics: false,
+                                    electronics: false,
+                                    others: false,
+                                    }))
+                                setFoodCategoryType((prev) =>({
+                                    rice: false,
+                                    staple: false,
+                                    snackies: false
+                                }))
                             }}
                         >
                             <IoMdClose />
@@ -593,8 +747,9 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                         </h1>
 
                         
-                        { !showSkeletonView ? 
+                        { selectedEditItem===true&&showSkeletonView ? 
                         <>
+                        {/* {console.log("Seee:",showSkeletonView)} */}
                             <div className="addItemPicSkeleton"/> 
                             <div style={{
                                 display:"flex",
@@ -617,6 +772,8 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
                             :
                             <>
+                                                    {/* {console.log("Seee:",showSkeletonView)} */}
+
                             <button style={{
                             height: "15vh",
                             borderRadius:10 ,
@@ -658,11 +815,11 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                             <input 
                             placeholder=" " 
                             name={input.name}
-                            value={foodData ? foodData[input.key] || "" : ""}
+                            value={itemData ? itemData[input.key] || "" : ""}
                             onChange={(e)=>{input.key === "name" ?
-                                handleFoodName(input.key,e.target.value) : 
+                                handleItemName(input.key,e.target.value) : 
                                 input.key === "price" ?
-                                handleFoodPrice(input.key,e.target.value) :
+                                handleItemPrice(input.key,e.target.value) :
                                 ""                           
                             }}
                             style={{
@@ -670,7 +827,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                             }}
                             type={input.type}
                             />
-                            {/* {console.log(foodData)} */}
+                            {/* {console.log(itemData)} */}
                             <label>{input.name}:</label>
                         </div>) 
                             })}
@@ -678,7 +835,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                             </div>
 
 
-                           {!selectedEditFood && <div style={{
+                           {!selectedEditItem && <div style={{
                                 marginLeft:"20px",
                                 marginTop: "15px",
                                 backgroundColor: "#eee",
@@ -720,8 +877,11 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                             marginTop:"15px",
                                             gap: 10
                                         }}>
+                                            {
+                                                businessType ==="restaurant" ?
+                                                <>
                                             <button 
-                                            onClick={()=>{setCategoryType((prev) =>({
+                                            onClick={()=>{setFoodCategoryType((prev) =>({
                                                 rice: true,
                                                 staple: false,
                                                 snackies: false
@@ -733,16 +893,16 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                                 width:"10vw",
                                                 borderRadius:"5px",
                                                 borderWidth: 2,
-                                                borderColor: categoryType.rice === true ? "green" : "#c2bfbfff",
-                                                color: categoryType.rice === true ? "green":"#848383ff",
-                                                backgroundColor: categoryType.rice === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: categoryType.rice === true ? "bold" : null
+                                                borderColor: foodCategoryType.rice === true ? "green" : "#c2bfbfff",
+                                                color: foodCategoryType.rice === true ? "green":"#848383ff",
+                                                backgroundColor: foodCategoryType.rice === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: foodCategoryType.rice === true ? "bold" : null
                                             }}>
                                                 Rice Dish
                                             </button>
 
                                             <button 
-                                            onClick={()=>{setCategoryType((prev) =>({
+                                            onClick={()=>{setFoodCategoryType((prev) =>({
                                                 rice: false,
                                                 staple: true,
                                                 snackies: false
@@ -755,16 +915,16 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                                 width:"10vw",
                                                 borderRadius:"5px",
                                                 borderWidth: 2,
-                                                borderColor: categoryType.staple === true ? "green" : "#c2bfbfff",
-                                                color: categoryType.staple === true ? "green":"#848383ff",
-                                                backgroundColor: categoryType.staple === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: categoryType.staple === true ? "bold" : null
+                                                borderColor: foodCategoryType.staple === true ? "green" : "#c2bfbfff",
+                                                color: foodCategoryType.staple === true ? "green":"#848383ff",
+                                                backgroundColor: foodCategoryType.staple === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: foodCategoryType.staple === true ? "bold" : null
                                             }}>
                                                 {"Staple Dish (Local)"}
                                             </button>
 
                                             <button 
-                                            onClick={()=>{setCategoryType((prev) =>({
+                                            onClick={()=>{setFoodCategoryType((prev) =>({
                                                 rice: false,
                                                 staple: false,
                                                 snackies: true
@@ -776,13 +936,129 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                                 width:"10vw",
                                                 borderRadius:"5px",
                                                 borderWidth: 2,
-                                                borderColor: categoryType.snackies === true ? "green" : "#c2bfbfff",
-                                                color: categoryType.snackies === true ? "green":"#848383ff",
-                                                backgroundColor: categoryType.snackies === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: categoryType.snackies === true ? "bold" : null
+                                                borderColor: foodCategoryType.snackies === true ? "green" : "#c2bfbfff",
+                                                color: foodCategoryType.snackies === true ? "green":"#848383ff",
+                                                backgroundColor: foodCategoryType.snackies === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: foodCategoryType.snackies === true ? "bold" : null
                                             }}>
                                                 Snackies
                                             </button>
+                                            </>
+                                                :
+                                                <>
+
+                                                <button 
+                                                    onClick={()=>{setStuffCategoryType((prev) =>({fashion: true,
+                                                                books: false,
+                                                                cosmetics: false,
+                                                                electronics: false,
+                                                                others: false,
+                                                            }));
+                                                    setSelectedCatergory("books");
+                                                    }}
+                                                    style={{
+                                                        height:"5vh",
+                                                        width:"10vw",
+                                                        borderRadius:"5px",
+                                                        borderWidth: 2,
+                                                        borderColor: stuffCategoryType.fashion === true ? "green" : "#c2bfbfff",
+                                                        color: stuffCategoryType.fashion === true ? "green":"#848383ff",
+                                                        backgroundColor: stuffCategoryType.fashion === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                        fontWeight: stuffCategoryType.fashion === true ? "bold" : null
+                                                    }}>
+                                                        Fashion
+                                            </button>
+
+
+                                                <button 
+                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                        books: true,
+                                                        cosmetics: false,
+                                                        electronics: false,
+                                                        others: false,
+                                                    }));
+                                            setSelectedCatergory("books");
+                                            }}
+                                            style={{
+                                                height:"5vh",
+                                                width:"10vw",
+                                                borderRadius:"5px",
+                                                borderWidth: 2,
+                                                borderColor: stuffCategoryType.books === true ? "green" : "#c2bfbfff",
+                                                color: stuffCategoryType.books === true ? "green":"#848383ff",
+                                                backgroundColor: stuffCategoryType.books === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: stuffCategoryType.books === true ? "bold" : null
+                                            }}>
+                                                Books
+                                            </button>
+
+                                            <button 
+                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                        books: false,
+                                                        cosmetics: true,
+                                                        electronics: false,
+                                                        others: false,
+                                                    }));
+                                            setSelectedCatergory("cosmetics");
+
+                                            }}
+                                            style={{
+                                                height:"5vh",
+                                                width:"10vw",
+                                                borderRadius:"5px",
+                                                borderWidth: 2,
+                                                borderColor: stuffCategoryType.cosmetics === true ? "green" : "#c2bfbfff",
+                                                color: stuffCategoryType.cosmetics === true ? "green":"#848383ff",
+                                                backgroundColor: stuffCategoryType.cosmetics === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: stuffCategoryType.cosmetics === true ? "bold" : null
+                                            }}>
+                                                {"Cosmetics"}
+                                            </button>
+
+                                            <button 
+                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                        books: false,
+                                                        cosmetics: false,
+                                                        electronics: true,
+                                                        others: false,
+                                                    }));
+                                            setSelectedCatergory("electronics");                                        
+                                            }}
+                                            style={{
+                                                height:"5vh",
+                                                width:"10vw",
+                                                borderRadius:"5px",
+                                                borderWidth: 2,
+                                                borderColor: stuffCategoryType.electronics === true ? "green" : "#c2bfbfff",
+                                                color: stuffCategoryType.electronics === true ? "green":"#848383ff",
+                                                backgroundColor: stuffCategoryType.electronics === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: stuffCategoryType.electronics === true ? "bold" : null
+                                            }}>
+                                                Electronics
+                                            </button>
+                                            <button 
+                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                        books: false,
+                                                        cosmetics: false,
+                                                        electronics: false,
+                                                        others: true,
+                                                    }));
+                                            setSelectedCatergory("others");                                        
+                                            }}
+                                            style={{
+                                                height:"5vh",
+                                                width:"10vw",
+                                                borderRadius:"5px",
+                                                borderWidth: 2,
+                                                borderColor: stuffCategoryType.others === true ? "green" : "#c2bfbfff",
+                                                color: stuffCategoryType.others === true ? "green":"#848383ff",
+                                                backgroundColor: stuffCategoryType.others === true ? "rgba(32, 145, 96, 0.22)": null,
+                                                fontWeight: stuffCategoryType.others === true ? "bold" : null
+                                            }}>
+                                                Others
+                                            </button>
+                                            </>
+                                            }
                                         </div>
                                         
                                     </div>
@@ -927,7 +1203,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                     marginTop: checked.addOns?"25px":"35px",
                                     marginRight: "10px",
                                     marginBottom: "20px",
-                                    gap: selectedEditFood ? 10 : null
+                                    gap: selectedEditItem ? 10 : null
                                 }}>
                                     <button 
                                     onClick={()=>handleSubmit()}
@@ -936,7 +1212,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                         padding: "4px",
                                         color: "white",
                                         borderRadius: "5px",
-                                        width: selectedEditFood=== true ? "6vw":"10vw"
+                                        width: selectedEditItem=== true ? "6vw":"10vw"
 
                                     }}>{ loader === false ? "Submit" 
                                         :
@@ -949,7 +1225,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                         </div>}
                                     </button>
 
-                                    {selectedEditFood && <button 
+                                    {selectedEditItem && <button 
                                     onClick={()=>removeFood()}
                                     style={{
                                         backgroundColor: "rgba(201, 11, 11, 1)",
@@ -1014,3 +1290,5 @@ export default ManageBusiness;
 // for the one above it has been done to add restaurant so remay be able to delete it easily
 
 // when editing, make sure summision is to update or overwrite not create new
+
+//fix so that pics with the same name dont throw errors

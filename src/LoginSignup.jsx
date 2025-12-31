@@ -32,7 +32,7 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                     {name: "Password", type:"password", key: "password"},
                 ]
 
-    const signupInputFields=[{name: "Restaurant name", type:"text", key: "fullname"},
+    const signupInputFields=[{name: "Business name", type:"text", key: "fullname"},
                     {name: "Email-address", type:"text", key: "email"},
                     {name: "Contact", type:"number", key: "contact"},
                     {name: "Password", type:"password", key: "password"},
@@ -128,7 +128,7 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
 
     const handleGoogleSignIn = async () => {
 
-        if(signup === true && (!signupData.fullname || !signupData.contact)){
+        if(signup === true && (!signupData?.fullname || !signupData?.contact || !signupData?.businessType)){
             console.log("Fill the restaurant name and contact fields only before proceeding");
             return;
         }
@@ -146,24 +146,47 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
             const { creationTime, lastSignInTime } = user.metadata;
             const isNewUser = new Date(creationTime).getTime() === new Date(lastSignInTime).getTime();
 
-            const myemail = user.email.replace('.', ',');
+            const myemail = user?.email?.replace('.', ',');
 
             console.log("🎉 Signed in with Google!", myemail, "Is new user?", isNewUser);
+
+            const restaurantSnap = await get(ref(db, `restaurants/${myemail}`));
+            const shopSnap = await get(ref(db, `shops/${myemail}`));
+
+            const userData = restaurantSnap.exists()
+                ? restaurantSnap.val()
+                : shopSnap.val();
             
             if (isNewUser) {
-            get(ref(db, `restaurants/${myemail}`))
-                .then(snapshot => {
-                    if(!snapshot.exists()){
-                        setFeedBack("wrongLogs");
-                        console.log("Account doesn't exist. Sign up");
-                        setMoveToPartialForm(true);
-                        return;
-                    
-                    }
-                })
+            // get(ref(db, `restaurants/${myemail}`))
 
-            await set(ref(db, `restaurants/${myemail}`), {
-                restaurantName: signupData.fullname,
+            // const restaurantSnap = await get(ref(db, `restaurants/${myemail}`));
+            // const shopSnap = await get(ref(db, `shops/${myemail}`));
+
+            // const userData = restaurantSnap.exists()
+            //     ? restaurantSnap.val()
+            //     : shopSnap.val();
+
+            // if (signup === false && (!restaurantSnap.exists() || !shopSnap.exists())) {
+            //     setFeedBack("wrongLogs");
+            //     console.log("❌ Email doesnt have business");
+            //     setLoading(false);
+            //     return;
+            // }
+
+            if (signup === false) {
+                await deleteUser(user);
+                setFeedBack("wrongLogs");
+                console.log("❌ Email doesnt have business");
+                setLoading(false);
+                return;
+            }
+
+            await set(ref(db, `${signupData.businessType === "restaurant"?"restaurants":"shops"}/${myemail}`), {
+                [signupData.businessType === "restaurant"
+                    ? "restaurantName"
+                    : "shopName"
+                ]: signupData.fullname,
                 category: "",
                 numberOfRatings: 0,
                 sumOfRatings: 0,
@@ -178,23 +201,40 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
             // sendCameraSignal(true);
             sendProfile(myemail);
             sendBusinessName(signupData?.fullname);
-            sendBusinessType(signupData?.businessType)
+            sendBusinessType(signupData?.businessType);
+            setLogger(true);
             } else {
 
-            get(ref(db, `restaurants/${myemail}`))
-                .then(snapshot => {
-                    if(!snapshot.exists()){
+
+
+                    // const safeEmail = loginData?.email?.replace(/\./g, ",");
+
+
+                    // const restaurantSnap = await get(ref(db, `restaurants/${myemail}`));
+                    // const shopSnap = await get(ref(db, `shops/${myemail}`));
+
+                    // const userData = restaurantSnap.exists()
+                    //     ? restaurantSnap.val()
+                    //     : shopSnap.val();
+
+                    if (!restaurantSnap.exists() && !shopSnap.exists()) {
                         setFeedBack("wrongLogs");
-                        console.log("❌ Email does not exists as restaurant");
+                        console.log("❌ Email does not exist");
+                        setLoading(false);
                         return;
-                    
                     }
                     else{
+                        const data = userData || "";
+
+                        // const myemail = loginData?.email.replace(".",",");
                         setVisible(true);
                         setFeedBack("googleAlreadyExists");
-                        // setLogger(true);
+                        sendProfile(myemail);
+                        sendBusinessName(data?.businessType==="restaurant" ? data?.restaurantName : data?.shopName);
+                        sendBusinessType(data?.businessType);
+                        setLogger(true);
                     }
-                })
+
             // setVisible(true);
             // setFeedBack("googleAlreadyExists");
             // // setLogger(true);
@@ -229,8 +269,11 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                     if (!myemail) return;
 
                     // write to database
-                    await set(ref(db, `restaurants/${myemail}`), {
-                        restaurantName: signupData?.fullname,
+                    await set(ref(db, `${signupData.businessType === "restaurant"?"restaurants":"shops"}/${myemail}`), {
+                        [signupData.businessType === "restaurant"
+                            ? "restaurantName"
+                            : "shopName"
+                        ]: signupData.fullname,
                         category: "",
                         numberOfRatings: 0,
                         sumOfRatings: 0,
@@ -242,6 +285,8 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                     sendProfile(myemail);
                     sendBusinessName(signupData?.fullname);
                     sendBusinessType(signupData?.businessType);
+                    setLogger(true);
+                    
 
 
                     clearInterval(interval); // stop polling
@@ -303,6 +348,7 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                 || !signupData?.contact 
                 || !signupData?.password
                 || !signupData?.confirm
+                || !signupData?.businessType
             ){
                 console.log("Sign up fields not completed");
                 setLoading(false);
@@ -363,7 +409,10 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                                 // console.log("Account Created");
                                 // setLoading(false);
                                 // set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
-                                // restaurantName: signupData?.fullname,
+                                //                 [signupData.businessType === "restaurant"
+                                //     ? "restaurantName"
+                                //     : "shopName"
+                                // ]: signupData.fullname,
                                 // category: "",
                                 // numberOfRatings: 0,
                                 // sumOfRatings: 0,
@@ -380,7 +429,10 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                     // console.log("Account Created");
                     // setLoading(false);
                     // set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
-                    // restaurantName: signupData?.fullname,
+                    //                [signupData.businessType === "restaurant"
+                    //     ? "restaurantName"
+                    //     : "shopName"
+                    // ]: signupData.fullname,
                     // category: "",
                     // numberOfRatings: 0,
                     // sumOfRatings: 0,
@@ -416,7 +468,7 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
         :
         (
             signInWithEmailAndPassword(auth, loginData?.email, loginData?.password)
-            .then(()=>{
+            .then(async ()=>{
                 if(fullySignedUp === false){
                     // sendCameraSignal(true);
                     // sendProfile(loginData.email);
@@ -424,17 +476,28 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                 }
                 else{
 
-                    get(ref(db, `restaurants/${loginData?.email.replace(".",",")}`))
-                        .then(snapshot => {
-                            if(!snapshot.exists()){
+                            const safeEmail = loginData?.email?.replace(/\./g, ",");
+
+                            if(!safeEmail) return
+
+                            const restaurantSnap = await get(ref(db, `restaurants/${safeEmail}`));
+                            const shopSnap = await get(ref(db, `shops/${safeEmail}`));
+
+                            const userData = restaurantSnap.exists()
+                                ? restaurantSnap.val()
+                                : shopSnap.val();
+
+                            console.log("User data:", userData);
+
+                            if (!restaurantSnap.exists() && !shopSnap.exists()) {
                                 setFeedBack("wrongLogs");
-                                console.log("❌ Email does not exists as restaurant");
+                                console.log("❌ Email does not exist");
                                 setLoading(false);
                                 return;
                             }
                             else{
 
-                                const data = snapshot.val() || "";
+                                const data = userData || "";
 
                                 const myemail = loginData?.email.replace(".",",");
 
@@ -443,11 +506,11 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                                 console.log("🎉🎉 Logged in");
                                 setLoading(false);
                                 sendProfile(myemail);
-                                sendBusinessName(data?.restaurantName);
+                                sendBusinessName(loginData.businessType==="restaurant" ? data?.restaurantName : data?.shopName);
                                 sendBusinessType(data?.businessType);
                                 setLogger(true);
                             }
-                        });
+                     
                     // setFeedBack("correctLogs");
                     // setVisible(true);
                     // console.log("🎉🎉 Logged in");
@@ -1005,8 +1068,8 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                         <option value="" >
                             Business Type
                         </option>
-                        <option value="Restaurant">Restaurant</option>
-                        <option value="Shop">Shop</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="shop">Shop</option>
                         </select>
                     </div>
 

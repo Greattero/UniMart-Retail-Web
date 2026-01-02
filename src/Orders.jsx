@@ -1,66 +1,53 @@
 import React, { useEffect, useRef, useState} from 'react';
 import {BiCalendar, BiHome} from "react-icons/bi";
 import { IoEyeSharp } from "react-icons/io5";
+import { app } from "./firebaseConfig.js"; // your firebaseConfig file
+import { get, getDatabase, ref, update } from "firebase/database";
 
 
 
-function Orders({style}){
+function Orders({style, getMyProfile}){
+
+    const db = getDatabase(app);
 
     const [isAcceptOrder, setIsAcceptOrder] = useState({});
+    const [myProfile, setMyProfile] = useState("");
+    
 
+    useEffect(()=>{
+        setMyProfile(getMyProfile);
+    },[getMyProfile])
 
-    const orders = [
-    { orderId: "UM-001", food: "Fried Rice", buyer: "Jessica Mahunu", contact: "0540000001", date: "2025-02-01", status: "Pending" },
-    { orderId: "UM-002", food: "Jollof Rice", buyer: "Foster Ametepey", contact: "0540000002", date: "2025-02-01", status: "Completed" },
-    { orderId: "UM-003", food: "Chicken Burger", buyer: "Efia Sarpong", contact: "0540000003", date: "2025-02-02", status: "Pending" },
-    { orderId: "UM-004", food: "Pizza", buyer: "Kojo Mensah", contact: "0540000004", date: "2025-02-02", status: "In Progress" },
-    { orderId: "UM-005", food: "Shawarma", buyer: "Ama Boadu", contact: "0540000005", date: "2025-02-03", status: "Completed" },
-    { orderId: "UM-006", food: "Banku & Tilapia", buyer: "Yaw Amankwah", contact: "0540000006", date: "2025-02-03", status: "Pending" },
-    { orderId: "UM-007", food: "Wakye", buyer: "Abena Serwaa", contact: "0540000007", date: "2025-02-04", status: "Completed" },
-    { orderId: "UM-008", food: "Sandwich", buyer: "Michael Ofori", contact: "0540000008", date: "2025-02-04", status: "Pending" },
-    { orderId: "UM-009", food: "Kebab", buyer: "Nana Kyei", contact: "0540000009", date: "2025-02-05", status: "In Progress" },
-    { orderId: "UM-010", food: "Yam Chips", buyer: "Linda Asare", contact: "0540000010", date: "2025-02-05", status: "Pending" },
-    { orderId: "UM-011", food: "Noodles", buyer: "Peter Boateng", contact: "0540000011", date: "2025-02-06", status: "Completed" },
-    { orderId: "UM-012", food: "Fufu", buyer: "Sarah Adjei", contact: "0540000012", date: "2025-02-06", status: "Pending" },
-    { orderId: "UM-013", food: "Kelewele", buyer: "Kwesi Darko", contact: "0540000013", date: "2025-02-07", status: "Pending" },
-    { orderId: "UM-014", food: "Salad", buyer: "Akua Badu", contact: "0540000014", date: "2025-02-07", status: "Completed" },
-    { orderId: "UM-015", food: "Omelette", buyer: "Richmond Nartey", contact: "0540000015", date: "2025-02-08", status: "In Progress" },
-    { orderId: "UM-016", food: "Boiled Yam", buyer: "Deborah Owusu", contact: "0540000016", date: "2025-02-08", status: "Pending" },
-    { orderId: "UM-017", food: "Meat Pie", buyer: "Prince Tetteh", contact: "0540000017", date: "2025-02-09", status: "Completed" },
-    { orderId: "UM-018", food: "Spring Rolls", buyer: "Rita Nyarko", contact: "0540000018", date: "2025-02-09", status: "Pending" },
-    { orderId: "UM-019", food: "Hotdog", buyer: "Emmanuel Addo", contact: "0540000019", date: "2025-02-10", status: "In Progress" },
-    { orderId: "UM-020", food: "Chicken Wrap", buyer: "Mabel Aryee", contact: "0540000020", date: "2025-02-10", status: "Pending" },
-    { orderId: "UM-021", food: "Burger", buyer: "Kingsley Amuzu", contact: "0540000021", date: "2025-02-11", status: "Completed" },
-    { orderId: "UM-022", food: "Tacos", buyer: "Hannah Yeboah", contact: "0540000022", date: "2025-02-11", status: "Pending" },
-    { orderId: "UM-023", food: "Lasagna", buyer: "Samuel Owusu", contact: "0540000023", date: "2025-02-12", status: "In Progress" },
-    { orderId: "UM-024", food: "Chicken Rice", buyer: "Doris Addai", contact: "0540000024", date: "2025-02-12", status: "Completed" },
-    { orderId: "UM-025", food: "BBQ Wings", buyer: "Jonathan Mensah", contact: "0540000025", date: "2025-02-13", status: "Pending" },
-    { orderId: "UM-026", food: "Ice Cream", buyer: "Angela Duah", contact: "0540000026", date: "2025-02-13", status: "Completed" },
-    { orderId: "UM-027", food: "Steak", buyer: "Elvis Torgah", contact: "0540000027", date: "2025-02-14", status: "Pending" },
-    { orderId: "UM-028", food: "Goat Meat", buyer: "Miriam Obeng", contact: "0540000028", date: "2025-02-14", status: "In Progress" },
-    { orderId: "UM-029", food: "Pancakes", buyer: "Selina Twum", contact: "0540000029", date: "2025-02-15", status: "Completed" },
-    { orderId: "UM-030", food: "Donuts", buyer: "Felix Dankwa", contact: "0540000030", date: "2025-02-15", status: "Pending" },
-    { orderId: "UM-031", food: "Tuna Sandwich", buyer: "Rachel Osei", contact: "0540000031", date: "2025-02-16", status: "Completed" },
-    { orderId: "UM-032", food: "Rice Balls", buyer: "Nana Boateng", contact: "0540000032", date: "2025-02-16", status: "Pending" },
-    { orderId: "UM-033", food: "Gizzard Stew", buyer: "Esi Atta", contact: "0540000033", date: "2025-02-17", status: "In Progress" },
-    { orderId: "UM-034", food: "Muffin", buyer: "Daniel Otoo", contact: "0540000034", date: "2025-02-17", status: "Pending" },
-    { orderId: "UM-035", food: "Coconut Rice", buyer: "Abigail Ofori", contact: "0540000035", date: "2025-02-18", status: "Completed" },
-    { orderId: "UM-036", food: "Tortilla", buyer: "Isaac Quaye", contact: "0540000036", date: "2025-02-18", status: "Pending" },
-    { orderId: "UM-037", food: "Kofta", buyer: "Vivian Agyemang", contact: "0540000037", date: "2025-02-19", status: "In Progress" },
-    { orderId: "UM-038", food: "Rice & Stew", buyer: "Joshua Armah", contact: "0540000038", date: "2025-02-19", status: "Pending" },
-    { orderId: "UM-039", food: "Nuggets", buyer: "Millicent Kumi", contact: "0540000039", date: "2025-02-20", status: "Completed" },
-    { orderId: "UM-040", food: "French Fries", buyer: "Yaw Ackah", contact: "0540000040", date: "2025-02-20", status: "Pending" },
-    { orderId: "UM-041", food: "Stir Fry", buyer: "Martha Agyei", contact: "0540000041", date: "2025-02-21", status: "Completed" },
-    { orderId: "UM-042", food: "Mashed Potatoes", buyer: "Shawn Koranteng", contact: "0540000042", date: "2025-02-21", status: "Pending" },
-    { orderId: "UM-043", food: "Roasted Corn", buyer: "Kobby Saah", contact: "0540000043", date: "2025-02-22", status: "In Progress" },
-    { orderId: "UM-044", food: "Milkshake", buyer: "Nana Ama", contact: "0540000044", date: "2025-02-22", status: "Completed" },
-    { orderId: "UM-045", food: "Grilled Chicken", buyer: "Cynthia Owusu", contact: "0540000045", date: "2025-02-23", status: "Pending" },
-    { orderId: "UM-046", food: "Spaghetti", buyer: "Henry Ofori", contact: "0540000046", date: "2025-02-23", status: "Completed" },
-    { orderId: "UM-047", food: "Egg Fried Rice", buyer: "Mary Nti", contact: "0540000047", date: "2025-02-24", status: "Pending" },
-    { orderId: "UM-048", food: "Turkey Wings", buyer: "Samuel Owusu", contact: "0540000048", date: "2025-02-24", status: "In Progress" },
-    { orderId: "UM-049", food: "Meatballs", buyer: "Priscilla Boateng", contact: "0540000049", date: "2025-02-25", status: "Completed" },
-    { orderId: "UM-050", food: "Plantain & Beans", buyer: "Kweku Oteng", contact: "0540000050", date: "2025-02-25", status: "Pending" },
-    ];
+    const [orders, setOrders] = useState([]);
+
+    get(ref(db, `restaurants/${myProfile}/myOrders`)).then((snapshot)=>{
+        const data = snapshot.val() || [];
+        const ordersArray = Object.entries(data).map(([id, order]) => ({
+            id,
+            ...order,
+        }));
+        setOrders(ordersArray);
+        // console.log(data);
+    })
+
+    const handleAccept = (id, buyerPath, confirmid) => {
+    update(ref(db, `buyer-profiles/${buyerPath}/purchases/${id}`), {
+        status: "incomplete",
+    });
+
+    update(ref(db, `restaurants/${myProfile}/myOrders/${id}`), {
+        status: "accepted",
+    });
+
+    // setIsAcceptOrder(prev => ({
+    //     ...prev,
+    //     [confirmid]: true,
+    // }));
+    };
+
+    // console.log(myOrder);
+
+    
 
 
 
@@ -327,7 +314,7 @@ function Orders({style}){
                     <div style={{
                         width: "10vw",
                     }}>
-                    <p>{order.food.length > 15 ? order.food.slice(0,15) + "..." : order.food}</p>
+                    <p>{order.foodName.length > 15 ? order.foodName.slice(0,15) + "..." : order.foodName}</p>
                     </div>
                     <div style={{
                         width: "10vw",
@@ -351,7 +338,7 @@ function Orders({style}){
                         gap: 10,
 
                     }}>
-                        { isAcceptOrder[order.orderId] ? (
+                        { order.status === "accepted" ? (
                         <button style={{
                             backgroundColor: "rgba(167, 167, 167, 1)",
                             color: "white",
@@ -378,7 +365,10 @@ function Orders({style}){
                             justifyContent: "center",
                             borderRadius: "5px"
                         }}
-                        onClick={()=>setIsAcceptOrder((prev)=>({...prev, [order.orderId]: true}))}
+                        onClick={()=>{
+                                        handleAccept(order.id,order.buyerProfile,order.orderId);
+                                        console.log("deep",order.id,order.buyerProfile,order.orderId)
+                    }}
                         >Accept</button>
 
                         <button style={{

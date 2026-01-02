@@ -4,7 +4,7 @@ import jollof from "./assets/jollofFood.jpg";
 import { MdDelete } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
 import { app } from "./firebaseConfig.js"; // your firebaseConfig file
-import { getDatabase, onValue, ref, get, update, remove } from "firebase/database";
+import { getDatabase, set, ref, get, update, remove } from "firebase/database";
 // import { getDatabase, onValue, ref, set } from "firebase/database";
 import "./inputStyle.css"
 import supabase from "./supabaseClient";
@@ -13,10 +13,11 @@ import { snapshotEqual } from "firebase/firestore/lite";
 
 
 
-function ManageBusiness({style, getSeller, getBusinessType}){
+function ManageBusiness({style, getSeller, getBusinessType, getNameofBusiness}){
 
     const [seller, setSeller] = useState("");
-    const [businessType, setBusinessType] = useState("")
+    const [businessType, setBusinessType] = useState("");
+    const [businessName, setBusinessName] = useState("");
 
     useEffect(()=>{
         setSeller(getSeller);
@@ -25,6 +26,15 @@ function ManageBusiness({style, getSeller, getBusinessType}){
     useEffect(()=>{
         setBusinessType(getBusinessType);
     },[getBusinessType])
+
+    useEffect(()=>{
+        setBusinessName(getNameofBusiness);
+    },[getNameofBusiness])
+
+    // console.log("whhh",businessType);
+
+                // console.log("kiiiii",businessName);
+
 
     const db = getDatabase(app);
 
@@ -95,7 +105,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
     const handleItemPrice = (field, value)=>{
         setItemData((prev)=>({
             ...prev,
-            [field] : value
+            [field] : Number(value)
         }))
     }
     
@@ -194,7 +204,14 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                     snackies: data === "snackies" ? true : false
                 }))
                 :
-                null
+            setStuffCategoryType((prev)=> ({
+                fashion: data === "fashion" ? true : false,
+                books: data === "books" ? true : false,
+                cosmetics: data === "cosmetics" ? true : false,
+                electronics: data === "electronics" ? true : false,
+                others: data === "others" ? true : false,
+
+            }))
             
             setSelectedCatergory(data);
 
@@ -275,7 +292,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
         const itemRef = ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${businessType==="restaurant"?"foods":"items"}`);
 
-        // const foodDisplayRef = ref(db,(`foodDisplay`))
+        const itemDisplayRef = ref(db,(`${businessType==="restaurant"? "foodDisplay":"shopDisplay"}/${selectedCategory}`))
 
         get(itemRef).then((snapshot)=>{
             const data = snapshot.val() || [];
@@ -283,7 +300,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
 
             //remove from foods
             update(ref(db, `${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}`),{
-                    [businessType === "restaurant" ? "foods" : "items"]: filteredFoods
+                    foods: filteredFoods
             })
                 .then(()=>{
                     // setRemoveLoader(false);
@@ -297,9 +314,51 @@ function ManageBusiness({style, getSeller, getBusinessType}){
             //remove the foodAddons
             remove(ref(db,`${businessType==="restaurant" ? "restaurants" : "shops"}/${seller}/${removedFood}`))
                 .then(()=>{
+                    // setSelectedEditItem(false);
+                    // setSelectedCatergory(null);
+                    // setRemoveLoader(false);
+                    // setItemData({});
+                    // setInputAddOns([]);
+                    // setFileURL(null);
+                    // setChecked({addOns: false,
+                    //     category: false
+                    // });
+                    // setStuffCategoryType((prev) =>({
+                    //     fashion: false,
+                    //     books: false,
+                    //     cosmetics: false,
+                    //     electronics: false,
+                    //     others: false,
+                    //     }))
+                    // setFoodCategoryType((prev) =>({
+                    //     rice: false,
+                    //     staple: false,
+                    //     snackies: false
+                    // }))
+                    // setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
+                    // setFileURL(null);
+                    // setFile(null);
+                    console.log("Removed from addons successfully");
+                })
+                .catch((err)=>{
+                    // setRemoveLoader(false);
+                    console.log(`Remove addons failed: ${err}`)
+                });
+
+            // remove from foodDisplay
+
+
+        })
+
+        get(itemDisplayRef).then((snapshot)=>{
+
+            const data = snapshot.val() || [];
+            const filteredFoods = data.filter(f => f.name !== removedFood)
+
+            set(itemDisplayRef, filteredFoods)
+            .then(()=>{
                     setSelectedEditItem(false);
                     setSelectedCatergory(null);
-                    setRemoveLoader(false);
                     setItemData({});
                     setInputAddOns([]);
                     setFileURL(null);
@@ -321,15 +380,14 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                     setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
                     setFileURL(null);
                     setFile(null);
-                    console.log("Removed from addons successfully");
-                })
+                    setRemoveLoader(false);
+                    console.log("Removed from foodDisplaySUccessful")
+
+            })
                 .catch((err)=>{
                     setRemoveLoader(false);
-                    console.log(`Remove addons failed: ${err}`)
+                    console.log(`Remove foodDisplay failed: ${err}`)
                 });
-
-            // remove from foodDisplay
-
         })
         
     }
@@ -410,18 +468,20 @@ function ManageBusiness({style, getSeller, getBusinessType}){
             const existing = snapshot.val() || [];
             const itemWithBusiness = {
             ...itemData,
-            shopName: seller
+            restaurantName: businessName,
+            sellerName: seller,
             };
             const updatedItems = selectedEditItem===false ? [...existing, itemWithBusiness] : existing.map(
-                f => f.name === oldRef && f.shopName ===seller ? {
+                f => f.name === oldRef && f.restaurantName ===businessName ? {
                     ...f, ...itemWithBusiness
                 } : f
             
             );
+            console.log(businessName);
 
             update(ref(db, `foodDisplay`), {
                 [selectedCategory]: updatedItems,
-                // shopName : seller
+                // restaurantName : businessName
             })
             .then(()=>{
                 // if (selectedEditItem &&  && oldRef !== itemData.name) {
@@ -722,7 +782,9 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                 setOpenPopUp(false);
                                 setItemData({});
                                 setInputAddOns([]);
+                                setAddOnLimit(0);
                                 setFileURL(null);
+                                setFile(null)
                                 setChecked({addOns: false,
                                     category: false
                                 });
@@ -1120,14 +1182,14 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                             <input placeholder=" "
                                             type="number"
                                             value={inputAddOns.find(item => item.id === addOn.id)?.price || ""}
-                                            onChange={(e)=>handleAddOnsChange(addOn.id,"price",e.target.value)}
+                                            onChange={(e)=>handleAddOnsChange(addOn.id,"price",Number(e.target.value))}
                                             />
                                             <label>{addOn.field2}</label>
 
                                          </div>
-                                         {console.log(addOn.id)}
-                                         {/* {console.table(inputAddOns)} */}
-                                         {/* {console.table(addOns)} */}
+                                         {/* {console.log(addOn.id)} */}
+                                         {/* {console.table(inputAddOns)}
+                                         {console.table(addOns)} */}
 
                                             {/* <MdDelete style={{
                                                 marginTop: "31px",
@@ -1140,7 +1202,7 @@ function ManageBusiness({style, getSeller, getBusinessType}){
                                             gap: 15,
                                         }}>   
                                             <button
-                                            disabled={addOnLimit === 10 ? true : false}
+                                            disabled={addOnLimit === 9 ? true : false}
                                             onClick={()=>{
                                                 
                                                 setAddOnLimit((prev)=>prev+1)

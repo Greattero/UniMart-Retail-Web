@@ -38,10 +38,14 @@ function App() {
       <Header style={{ height: "9vh" }} 
       getProlifeName={business}
       />
-      {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} />}
+      {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} 
+      getMyProfile={seller}
+      />}
       {tab === "manage" && <ManageBusiness 
       style={{ flex: 1, marginTop: "20px", marginLeft:"40px", minWidth:"100vw"}}
       getSeller={seller}
+      getBusinessType={typeOfBusiness}
+      getNameofBusiness={business}
       />}
     </div>
   </>

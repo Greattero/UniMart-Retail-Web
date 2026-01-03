@@ -30,13 +30,28 @@ function Orders({style, getMyProfile}){
         // console.log(data);
     })
 
-    const handleAccept = (id, buyerPath, confirmid) => {
+    const handleAccept = (id, buyerPath) => {
     update(ref(db, `buyer-profiles/${buyerPath}/purchases/${id}`), {
         status: "incomplete",
     });
 
     update(ref(db, `restaurants/${myProfile}/myOrders/${id}`), {
         status: "accepted",
+    });
+
+    // setIsAcceptOrder(prev => ({
+    //     ...prev,
+    //     [confirmid]: true,
+    // }));
+    };
+
+    const handleCancel = (id, buyerPath) => {
+    update(ref(db, `buyer-profiles/${buyerPath}/purchases/${id}`), {
+        status: "cancelled",
+    });
+
+    update(ref(db, `restaurants/${myProfile}/myOrders/${id}`), {
+        status: "cancelled",
     });
 
     // setIsAcceptOrder(prev => ({
@@ -340,7 +355,7 @@ function Orders({style, getMyProfile}){
                     }}>
                         { order.status === "accepted" ? (
                         <button style={{
-                            backgroundColor: "rgba(167, 167, 167, 1)",
+                            backgroundColor: "rgba(0, 0, 0, 1)",
                             color: "white",
                             width: "14.7vw",
                             display: "flex",
@@ -354,6 +369,33 @@ function Orders({style, getMyProfile}){
                             }}/>
                             View Order</button>)
                         
+                        : order.status === "cancelled" ?
+                        <button style={{
+                            backgroundColor: "rgba(110, 110, 110, 1)",
+                            color: "white",
+                            width: "14.7vw",
+                            display: "flex",
+                            justifyContent: "center",
+                            borderRadius: "5px",
+                            gap: 5,
+                        }}
+                        >
+
+                            Order Cancelled</button>
+
+                        : order.status === "complete" ?
+                        <button style={{
+                            backgroundColor: "rgba(63, 3, 124, 1)",
+                            color: "white",
+                            width: "14.7vw",
+                            display: "flex",
+                            justifyContent: "center",
+                            borderRadius: "5px",
+                            gap: 5,
+                        }}
+                        >
+
+                            Order Completed 💜</button>
                         :
 
                     <>
@@ -366,12 +408,17 @@ function Orders({style, getMyProfile}){
                             borderRadius: "5px"
                         }}
                         onClick={()=>{
-                                        handleAccept(order.id,order.buyerProfile,order.orderId);
-                                        console.log("deep",order.id,order.buyerProfile,order.orderId)
+                                        handleAccept(order.id,order.buyerProfile);
+                                        console.log("deep",order.id,order.buyerProfile)
                     }}
                         >Accept</button>
 
-                        <button style={{
+                        <button 
+                        onClick={()=>{
+                                        handleCancel(order.id,order.buyerProfile);
+                                        console.log("deep",order.id,order.buyerProfile)
+                    }}
+                        style={{
                             backgroundColor: "rgba(194, 44, 44, 1)",
                             color: "white",
                             width: "7vw",

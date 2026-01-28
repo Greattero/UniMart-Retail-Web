@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState} from 'react';
 import {BiCalendar, BiHome} from "react-icons/bi";
 import { IoEyeSharp } from "react-icons/io5";
 import { app } from "./firebaseConfig.js"; // your firebaseConfig file
-import { get, getDatabase, ref, update } from "firebase/database";
+import { get, getDatabase, limitToFirst, orderByKey, query, ref, startAt, update } from "firebase/database";
+import { IoMdClose } from "react-icons/io";
 
 
 
@@ -12,7 +13,21 @@ function Orders({style, getMyProfile}){
 
     const [isAcceptOrder, setIsAcceptOrder] = useState({});
     const [myProfile, setMyProfile] = useState("");
+    const [viewBuyer, setViewBuyer] = useState("");
+    const [viewContact, setViewContact] = useState("");
+    const [viewFoodName, setViewFoodName] = useState("");
+    const [viewFoodPrice, setViewFoodPrice] = useState("");
+    const [viewAddons, setViewAddons] = useState({});
+    const [showViewDetails, setShowViewDetails] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+
     
+    const loadingRef = useRef(false);
+    const lastKeyRef = useRef(null);
+
+    const PAGE_SIZE = 10;
+
 
     useEffect(()=>{
         setMyProfile(getMyProfile);
@@ -20,15 +35,68 @@ function Orders({style, getMyProfile}){
 
     const [orders, setOrders] = useState([]);
 
-    get(ref(db, `restaurants/${myProfile}/myOrders`)).then((snapshot)=>{
-        const data = snapshot.val() || [];
-        const ordersArray = Object.entries(data).map(([id, order]) => ({
-            id,
-            ...order,
-        }));
-        setOrders(ordersArray);
-        // console.log(data);
-    })
+
+    const loadOrders = async (isInitial = true) =>{
+        if (loadingRef.current || (!isInitial && ! hasMore)) return;
+
+        loadingRef.current = true;
+        setIsLoading(true);
+        const orderRef = ref(db, `restaurants/${myProfile}/myOrders`);
+
+        const orderQuery = isInitial
+        ? query(orderRef,orderByKey(), limitToFirst(PAGE_SIZE))
+        : query(orderRef, orderByKey(), startAt(lastKeyRef.current), limitToFirst(PAGE_SIZE + 1));
+
+        const snapshot = await get(orderQuery);
+
+        if(snapshot.exists()){
+            const entries = Object.entries(snapshot.val());
+
+            if(!isInitial) entries.shift();
+
+            if(entries.length === 0){
+                setHasMore(false);
+                setIsLoading(false);
+            } else{
+                lastKeyRef.current = entries[entries.length - 1][0];
+                const newOrders = entries.map(([id, order])=>({id, ...order}));
+                setOrders(prev=>isInitial ? newOrders : [...prev, ...newOrders]);
+            }
+        } else{
+            setHasMore(false);
+        }
+
+        loadingRef.current = false;
+        // setIsLoading(false);
+
+    }
+
+    useEffect(()=>{
+        const handleScroll = ()=>{
+            const {scrollTop, scrollHeight, clientHeight} = document.documentElement;
+
+            if(scrollTop + clientHeight >=  scrollHeight - 20){
+                loadOrders(false);
+            }
+        };
+        window.addEventListener("scroll", handleScroll);
+        return()=> window.removeEventListener("scroll", handleScroll);
+
+    },[hasMore, myProfile]);
+
+    useEffect(()=>{
+        if(myProfile) loadOrders(true);
+    }, [myProfile]);
+
+    // get(ref(db, `restaurants/${myProfile}/myOrders`)).then((snapshot)=>{
+    //     const data = snapshot.val() || [];
+    //     const ordersArray = Object.entries(data).map(([id, order]) => ({
+    //         id,
+    //         ...order,
+    //     }));
+    //     setOrders(ordersArray);
+    //     // console.log(data);
+    // })
 
     const handleAccept = (id, buyerPath) => {
     update(ref(db, `buyer-profiles/${buyerPath}/purchases/${id}`), {
@@ -61,6 +129,28 @@ function Orders({style, getMyProfile}){
     };
 
     // console.log(myOrder);
+
+    const handleViewDetails = (buyer, contact, foodName, price, addOns)=>{
+        setShowViewDetails(true);
+        setViewBuyer(buyer);
+        setViewContact(contact);
+        setViewFoodName(foodName);
+        setViewFoodPrice(price)
+        setViewAddons(addOns);
+            console.log("Viewers: ",viewBuyer,viewContact,viewFoodName,viewAddons)
+
+    }
+
+    const handleExitViewDetails = ()=>{
+        setShowViewDetails(false);
+        setViewBuyer("");
+        setViewContact("");
+        setViewFoodName("");
+        setViewFoodPrice("");
+        setViewAddons("");
+
+    }
+
 
     
 
@@ -354,7 +444,10 @@ function Orders({style, getMyProfile}){
 
                     }}>
                         { order.status === "accepted" ? (
-                        <button style={{
+                            
+                        <button 
+                        onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
+                        style={{
                             backgroundColor: "rgba(0, 0, 0, 1)",
                             color: "white",
                             width: "14.7vw",
@@ -384,7 +477,9 @@ function Orders({style, getMyProfile}){
                             Order Cancelled</button>
 
                         : order.status === "complete" ?
-                        <button style={{
+                        <button 
+                        onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
+                        style={{
                             backgroundColor: "rgba(63, 3, 124, 1)",
                             color: "white",
                             width: "14.7vw",
@@ -428,14 +523,163 @@ function Orders({style, getMyProfile}){
                         }}
                         >Cancel</button>
                     </>
+                    
             }
+            {/* {console.log(order.addOns)} */}
                     </div>
                 </div>
                 );
             })}
+            {isLoading && <p>Loading...</p>}
             </div>
                 </div>
             </div>
+
+                {showViewDetails===true && <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left:0,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1000
+
+                }}>
+                    <div style={{
+                        width: "36vw",
+                        height: "62vh",
+                        backgroundColor: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "20px",
+
+                    }}>
+                    <div style={{
+                        width: "35vw",
+                        height: "60vh",
+                        backgroundColor: "white",
+                        overflowY: "scroll"
+
+                        // position: "fixed",
+                        // left: 450,
+                        // top: 100,
+                    }}>
+                        <h1 style={{
+                            margin: "20px",
+                            fontSize: "35px",
+                            fontWeight: "bold",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}>Full Order Details
+                        
+                        <button
+                            onClick={()=>handleExitViewDetails()}
+                            style={{
+                                color: "#554f4fff"                                
+                            }}
+                        >
+                            <IoMdClose />
+                        </button>
+                        
+                        </h1>
+
+                        <div style={{
+                            display: "flex",
+                            flexDirection: "column"
+                        }}>
+
+                            <label style={{
+                                marginLeft:"20px",
+                                // marginTop: "5px",
+                                backgroundColor: "#eee",
+                                width: "32.5vw",
+                                height: "5vh",
+                                display: "flex",
+                                alignItems: "center",
+                                borderRadius: "5px",
+                                paddingLeft: "15px",
+                                fontWeight:"bold"
+                                }}>Name </label>
+                                <label style={{
+                                marginLeft:"30px",
+                                marginTop: "15px"
+
+                                }}>{viewBuyer}</label>
+                            <label style={{
+                                marginLeft:"20px",
+                                marginTop: "15px",
+                                backgroundColor: "#eee",
+                                width: "32.5vw",
+                                height: "5vh",
+                                display: "flex",
+                                alignItems: "center",
+                                borderRadius: "5px",
+                                paddingLeft: "15px",
+                                fontWeight:"bold",
+                                }}>Contact </label>
+                                <label style={{
+                                marginLeft:"30px",
+                                marginTop: "15px"
+
+                                }}>{viewContact}</label>
+
+                            <label style={{
+                                marginLeft:"20px",
+                                marginTop: "15px",
+                                backgroundColor: "#eee",
+                                width: "32.5vw",
+                                height: "5vh",
+                                display: "flex",
+                                alignItems: "center",
+                                borderRadius: "5px",
+                                paddingLeft: "15px",
+                                fontWeight:"bold",
+                            }}>{`Food Details`}                                
+                            <span
+                                style={{
+                                    color: "red",
+                                    marginLeft: "auto",
+                                    fontWeight:"bold"
+                                }}
+                                >{`GH₵${viewFoodPrice}`}</span> 
+                                </label>
+
+                                <label style={{
+                                marginLeft:"30px",
+                                marginTop: "15px",
+                                fontWeight:"bold",
+                                fontSize: 18
+
+                                }}>{`${viewFoodName} `}
+                                
+                                </label>
+
+                                {Object.keys(viewAddons).filter(key=>viewAddons[key]).map((viewAddon)=>{
+
+                                    return(
+                                <label 
+                                key={viewAddon}
+                                style={{
+                                marginLeft:"30px",
+                                marginTop: "15px",
+                                fontStyle:"italic"
+
+                                }}>{viewAddon}</label>
+
+                                    )
+                                })}
+                        </div>
+
+                    </div>
+                    </div>
+
+
+                </div>}
 
 
 

@@ -1,8 +1,9 @@
 import React, {useState, useEffect, useRef} from "react";
+import "./design-system.css";
 import "./loginSignUpInputStyles.css";
-import { MdConfirmationNumber, MdEmail, MdKey, MdLock, MdPerson, MdPhone } from "react-icons/md";
+import { MdEmail, MdLock, MdPerson, MdPhone } from "react-icons/md";
+import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import google from "./assets/google.png";
-import designs from "./assets/design.png";
 import { FaUser } from "react-icons/fa";
 import { getDatabase, onValue, ref, set, get } from "firebase/database";
 import { app, auth} from "./firebaseConfig.js"; // your firebaseConfig file
@@ -21,8 +22,16 @@ import mail from "./assets/mail.png";
 import { useGoogleLogin } from "@react-oauth/google";
 import {jwtDecode} from "jwt-decode";
 
-
-
+// Purely visual: which icon represents each field key. Not logic —
+// just keeps the icon consistent wherever a key of this name appears,
+// across both the login and signup field lists.
+const FIELD_ICONS = {
+    fullname: MdPerson,
+    email: MdEmail,
+    contact: MdPhone,
+    password: MdLock,
+    confirm: MdLock,
+};
 
 function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}) {
 
@@ -93,6 +102,21 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
 
     const isSuccess = successFeedbacks.includes(feedback);
 
+    const feedbackMessage =
+        feedback === "notMatch" ? "Password doesn't match"
+        : feedback === "shortPassword" ? "Password too short"
+        : feedback === "notAccurate" ? "Password must have at least letter and digit"
+        : feedback === "accountCreated" ? "Account created successfully"
+        : feedback === "correctLogs" ? "Logged in successfully"
+        : feedback === "wrongLogs" ? "Incorrect logins"
+        : feedback === "accountNotCreated" ? "Network error"
+        : feedback === "newGoogleSignUp" ? "Account created successfully"
+        : feedback === "googleAlreadyExists" ? "Logged in successfully"
+        : feedback === "passwordResetLinkSent" ? "Password reset not successful"
+        : feedback === "emailAlreadyRegistered" ? "Account already exists"
+        : feedback === "fillRequiredFields" ? "Fill in business name and contact before continuing with Google"
+        : null;
+
     const handleSignupDetails = (field, value) =>{
         setSignupData(prev=>({
             ...prev,
@@ -129,7 +153,8 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
     const handleGoogleSignIn = async () => {
 
         if(signup === true && (!signupData?.fullname || !signupData?.contact || !signupData?.businessType)){
-            console.log("Fill the restaurant name and contact fields only before proceeding");
+            setVisible(true);
+            setFeedBack("fillRequiredFields");
             return;
         }
 
@@ -158,21 +183,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                 : shopSnap.val();
             
             if (isNewUser) {
-            // get(ref(db, `restaurants/${myemail}`))
-
-            // const restaurantSnap = await get(ref(db, `restaurants/${myemail}`));
-            // const shopSnap = await get(ref(db, `shops/${myemail}`));
-
-            // const userData = restaurantSnap.exists()
-            //     ? restaurantSnap.val()
-            //     : shopSnap.val();
-
-            // if (signup === false && (!restaurantSnap.exists() || !shopSnap.exists())) {
-            //     setFeedBack("wrongLogs");
-            //     console.log("❌ Email doesnt have business");
-            //     setLoading(false);
-            //     return;
-            // }
 
             if (signup === false) {
                 await deleteUser(user);
@@ -205,18 +215,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
             setLogger(true);
             } else {
 
-
-
-                    // const safeEmail = loginData?.email?.replace(/\./g, ",");
-
-
-                    // const restaurantSnap = await get(ref(db, `restaurants/${myemail}`));
-                    // const shopSnap = await get(ref(db, `shops/${myemail}`));
-
-                    // const userData = restaurantSnap.exists()
-                    //     ? restaurantSnap.val()
-                    //     : shopSnap.val();
-
                     if (!restaurantSnap.exists() && !shopSnap.exists()) {
                         setFeedBack("wrongLogs");
                         console.log("❌ Email does not exist");
@@ -235,9 +233,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                         setLogger(true);
                     }
 
-            // setVisible(true);
-            // setFeedBack("googleAlreadyExists");
-            // // setLogger(true);
             }
 
         } catch (error) {
@@ -287,7 +282,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                     sendBusinessType(signupData?.businessType);
                     setLogger(true);
                     
-
 
                     clearInterval(interval); // stop polling
                 }
@@ -389,13 +383,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
             
             await createUserWithEmailAndPassword(auth, signupData?.email, signupData?.password)
             .then((userCredential)=>{
-                    // get(ref(db, `restaurants/${signupData.email.replace(".",",")}`))
-                    // .then(snapshot => {
-                    //     if(snapshot.exists()){
-                    //         console.log("✅ Email exists as restaurant");
-                    //         return;
-                    //     }
-                    //     else{
                                 setLoading(false);
                                 sendEmailVerification(userCredential.user);
                                 if(!auth.currentUser.emailVerified){
@@ -404,42 +391,6 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                                     setShowVerifyPage(true);
                                     return;
                                 }
-                                // setVisible(true);
-                                // setFeedBack("accountCreated");
-                                // console.log("Account Created");
-                                // setLoading(false);
-                                // set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
-                                //                 [signupData.businessType === "restaurant"
-                                //     ? "restaurantName"
-                                //     : "shopName"
-                                // ]: signupData.fullname,
-                                // category: "",
-                                // numberOfRatings: 0,
-                                // sumOfRatings: 0,
-                                // contact: signupData?.contact || ""
-                                // businessType: signupData?.businessType
-                                // });
-                                // sendCameraSignal(true);
-                                // sendProfile(signupData.email);
-                            
-                    //     } 
-                    // });
-                    // setVisible(true);
-                    // setFeedBack("accountCreated");
-                    // console.log("Account Created");
-                    // setLoading(false);
-                    // set(ref(db, `restaurants/${signupData?.email.replace(".",",")}`), {
-                    //                [signupData.businessType === "restaurant"
-                    //     ? "restaurantName"
-                    //     : "shopName"
-                    // ]: signupData.fullname,
-                    // category: "",
-                    // numberOfRatings: 0,
-                    // sumOfRatings: 0,
-                    // contact: signupData?.contact
-                    // });
-                    // // sendCameraSignal(true);
-                    // // sendProfile(signupData.email);
             })
             .catch((err)=>{
                 setVisible(true);
@@ -511,16 +462,7 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
                                 setLogger(true);
                             }
                      
-                    // setFeedBack("correctLogs");
-                    // setVisible(true);
-                    // console.log("🎉🎉 Logged in");
-                    // // setLogger(true)
-                    // setLoading(false);
                 }
-                // setFeedBack("correctLogs");
-                // setVisible(true);
-                // console.log("🎉🎉 Logged in");
-                // setLoading(false);
             })
             .catch((err)=>{
                 setFeedBack("wrongLogs");
@@ -531,700 +473,206 @@ function LoginSignup({sendBusinessName, sendProfile, setLogger,sendBusinessType}
         )
     }
 
+    // ---------------------------------------------------------
+    // Below this line: render helpers only. No state, no effects,
+    // no logic — just organizes the same JSX/handlers that used to
+    // sit inline into readable chunks.
+    // ---------------------------------------------------------
 
-
-
-    // const handleEmail = (field, value) =>{
-    //     setSignupData(prev=>({
-    //         ...prev,
-    //         [field]: value
-    //     }))
-    // }
-
-    // const handleContact = (field, value) =>{
-    //     setSignupData(prev=>({
-    //         ...prev,
-    //         [field]: value
-    //     }))
-    // }
-
-    // const handlePassword = (field, value) =>{
-    //     setSignupData(prev=>({
-    //         ...prev,
-    //         [field]: value
-    //     }))
-    // }
-
-    // const handleConfrimPassword = (field, value) =>{
-    //     setSignupData(prev=>({
-    //         ...prev,
-    //         [field]: value
-    //     }))
-    // }
-
-
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "rgba(70, 180, 127, 1)",
-        width: "100vw",
-        height: "100vh",
-      }}
-    >
-
-    {visible && (
-    <div
-        className="toast"
-        style={{
-            transform: `translateY(${toastY}px)`,
-            transition: 'transform 0.5s ease',
-        }}
-    >
-
-        {!isSuccess ? "❌" : "✅"}
-        <label style={{
-            marginLeft: "15px",
-            marginTop: "2px",
-        }}>
-                    {feedback === "notMatch" ? "Password doesn't match" 
-                    : feedback === "shortPassword" ? "Password too short"
-                    : feedback === "notAccurate" ? "Password must have at least letter and digit" 
-                    : feedback === "accountCreated" ? "Account created successfully"
-                    : feedback === "correctLogs" ? "Logged in successfully"
-                    : feedback === "wrongLogs" ? "Incorrect logins"
-                    : feedback === "accountNotCreated" ? "Network error"
-                    : feedback === "newGoogleSignUp" ? "Account created successfully"
-                    : feedback === "googleAlreadyExists" ? "Logged in successfully"
-                    : feedback === "passwordResetLinkSent" ? "Password reset not successful"
-                    : feedback === "emailAlreadyRegistered" ? "Account already exists"
-                    : null}
-        </label>
-    </div>
-    )}
-
-
-
-
-        
-      {/* Top space / header */}
-      <div
-        style={{
-          height: "40vh",
-          position: "relative",
-          display:"flex",
-          justifyContent:"center"
-        }}
-      >
-
-        <label style={{
-            marginTop:"35px",
-            fontSize: "80px",
-            fontWeight:"bold",
-            color:"white"
-        }}
-        
-        >Unimart</label>
-            <label style={{        
-                position: "absolute",
-                top: 70,
-                // right: 76,
-                color: "white",
-                fontSize: 12,
-                right: !signup ? 125 : 86}}>
-            {signup ? "Already have an account?": "Don't have an account?"}</label>
-
-
-            <div style={{
-                position: "absolute",
-                top: 62,
-                right: 25,
-                backgroundColor: "rgba(13, 150, 72, 0.39)",
-                padding: 5,
-                borderRadius: 5,
-                alignItems: "center",
-                width: !signup ? "90px" : "55px"}}>
-                <button 
-                onClick={()=>{
-                    setSignup(!signup);
-                    // setForgottenActivate(false);
-                    // setIsForgottenEmailSent(false);
-
-                }}
-                >
-                    <label style={{
-                        color: "white",
-                        fontSize: 13,
-                        fontWeight: "bold",
-                    }}>{signup ? "Sign in": "Get Started"}</label>
-                </button>
+    const renderField = (input, i, data, onChange) => {
+        const Icon = FIELD_ICONS[input.key];
+        return (
+            <div key={i} className="um-field" style={{ marginTop: 18 }}>
+                <input
+                    placeholder=" "
+                    value={data ? data[input.key] || "" : ""}
+                    onChange={(e) => onChange(input.key, e.target.value)}
+                    type={input.type}
+                />
+                <label>{input.name}</label>
+                {Icon && <Icon className="um-field-icon" />}
             </div>
-        <div style={{
-            height:  isActivePage === true ?"390px":"590px",
-            width:  isActivePage === true ?"510px":"610px",
-            backgroundColor: "white",
-            position: "absolute",
-            left: "50%",
-            bottom:  isActivePage === true ?"-200px":"-400px",
-            transform: "translateX(-50%)",
-            borderRadius: "20px",
-          }}>
-        <div
-          style={{
-            height:  isActivePage === true ?"350px":"550px",
-            width:  isActivePage === true ?"500px":"600px",
-            backgroundColor: "white",
-            position: "absolute",
-            left: "50%",
-            bottom:  isActivePage === true ?"-200px":"-400px",
-            transform: "translateX(-50%)",
-            borderRadius: "20px",
-            overflowY:isActivePage? null:"scroll",
-            top:20
-          }}
+        );
+    };
+
+    const renderSubmitButton = (label, isLoading, onClick) => (
+        <button
+            onClick={onClick}
+            disabled={isLoading}
+            className="um-btn um-btn-primary um-btn-block"
+            style={{ marginTop: 26, height: 50 }}
         >
-            {signup === false ? 
+            {isLoading ? <div className="loaderSubmit" /> : label}
+        </button>
+    );
+
+    const renderDivider = (text) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "26px 0 18px" }}>
+            <div style={{ flex: 1, height: 1, background: "var(--um-line)" }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--um-ink-faint)" }}>{text}</span>
+            <div style={{ flex: 1, height: 1, background: "var(--um-line)" }} />
+        </div>
+    );
+
+    const renderGoogleButton = (onClick) => (
+        <button onClick={onClick} className="um-btn um-btn-secondary um-btn-block" style={{ height: 50, marginBottom: 4 }}>
+            <img src={google} style={{ width: 20, height: 20 }} />
+            Continue with Google
+        </button>
+    );
+
+    const renderLoginForm = () => (
+        <>
+            <h1 className="um-auth-title">Welcome back</h1>
+            <p className="um-auth-subtitle">Sign in to manage your storefront</p>
+
+            {loginInputFields.map((input, i) => renderField(input, i, loginData, handleLoginDetails))}
+
+            <button
+                onClick={() => setShowResetLinkPage(true)}
+                className="um-btn-ghost"
+                style={{ marginTop: 14, fontSize: 13, fontWeight: 600 }}
+            >
+                Forgot password?
+            </button>
+
+            {renderSubmitButton("Sign in", loading, handleSubmit)}
+            {renderDivider("Or sign in with")}
+            {renderGoogleButton(handleGoogleSignIn)}
+        </>
+    );
+
+    const renderForgotPassword = () => (
+        isforgottenEmailSent === false ? (
             <>
-            {showResetLinkPage === false ? <div style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: "25px",
-                flexDirection:"column"
-            }}>
-                <label style={{
-                    fontSize: 28,
-                    fontWeight: "bold"
-                    }}>Welcome back</label>
-                <label style={{
-                    color: "#979595ff",
-                    fontStyle: "italic"
-                }}>Fill the form below</label>
-                {loginInputFields.map((input, i)=>{
-                    return( <div key={i}className="input-group"> 
-                            <input 
-                            placeholder=" " 
-                            value={loginData ? loginData[input.key]||"" : ""}
-                            onChange={(e)=>handleLoginDetails(input.key, e.target.value)}
-                            type={input.type}
-                            style={{
-                                borderWidth: 1,
-                                // paddingBottom: "20px"
-                            }}
-                            />
-
-                            <label>{input.name}</label>
-                            {input.key ==="email" ? 
-                            <MdPerson  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            input.key ==="password" ? 
-                            <MdLock  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            null}
-                        </div>)
-
-                        
-                })}
-
-                <button 
-                onClick={()=>setShowResetLinkPage(true)}
-                style={{
-                    marginTop:"30px",
-                    color: "#aba9a9ff",
-                    fontWeight: "bold"
-                }}
-                
-                >Forgot password?</button>
-
-                <button 
-                onClick={
-                    ()=>handleSubmit()
-                    // console.table(loginData)
-                }
-                style={{
-                    backgroundColor:"rgba(70, 180, 127, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"white",
-                    marginTop:"30px"
-                }}>
-                    Sign in
-                </button>
-                <div style={{
-                    display:"flex",
-                    justifyContent:"center",
-                    alignItems:"center"
-                }}>
-                    <div style={{
-                        borderWidth:1,
-                        marginTop: "40px",
-                        marginLeft:"25px",
-                        width: "450px",
-                        color:"#cac8c8ff"
-                    }}/>
-
-                    <label style={{
-                        position:"absolute",
-                        top: 425,
-                        fontWeight:"bold",
-                        backgroundColor:"white",
-                        paddingLeft: "20px",
-                        paddingRight: "20px"
-                    }}
-                    >Or sign in with</label>
-                </div>
-
-                <button 
-                onClick={()=>handleGoogleSignIn()}
-                style={{
-                    backgroundColor:"rgba(255, 255, 255, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"black",
-                    marginTop:"30px",
-                    borderColor: "#adacacff",
-                    overflow: "hidden",
-                    display: "flex",
-                    justifyContent: "center", // or "flex-start" if you want text left-aligned
-                    alignItems:"center",
-                    gap: "10px",              // space between icon and text
-                    borderWidth:1
-               }}>
-                    <img src={google}
-                    style={{
-                        width:"30px",
-                        height:"30px",
-                    }}
+                <h1 className="um-auth-title">Reset your password</h1>
+                <p className="um-auth-subtitle">We'll email you a link to get back in</p>
+                <div className="um-field" style={{ marginTop: 18 }}>
+                    <input
+                        placeholder=" "
+                        value={retrievalEmail}
+                        onChange={(e) => setRetrievalEmail(e.target.value)}
+                        style={{ paddingLeft: 14 }}
                     />
-                    Google
-                </button>
-            </div> 
-            :
-            <>
-            {
-                isforgottenEmailSent===false ?
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: "20px",
-                flexDirection:"column"
-            }}>
-                <label style={{
-                    fontSize:"30px",
-                    fontWeight:"bold"
-                }}>Enter your email</label>
-                <div className="input-group">
-
-                            <input 
-                            placeholder=" " 
-                            value={retrievalEmail}
-                            onChange={(e)=>setRetrievalEmail(e.target.value)}
-                            style={{
-                                borderWidth: 1,
-                                // paddingBottom: "20px"
-                            }}
-                            />
+                    <label style={{ left: 14 }}>Email address</label>
                 </div>
-
+                {renderSubmitButton("Send reset link", loading, handlePasswordReset)}
                 <button
-                onClick={()=>{
-                    handlePasswordReset();
-                }}           
-                style={{
-                    backgroundColor:"rgba(70, 180, 127, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"white",
-                    marginTop:"50px"
-                }}>
-                    
-                { loading === false ? "Send verification link" 
-                    :
-                    <div style={{
-                        display:"flex",
-                        alignItems: "center",
-                        justifyContent:"center"
-                    }}>
-                        <div className="loaderSubmit"/>
-                    </div>}
+                    onClick={() => setShowResetLinkPage(false)}
+                    className="um-btn-ghost"
+                    style={{ marginTop: 16, fontSize: 13, fontWeight: 600 }}
+                >
+                    Back to sign in
                 </button>
-            </div>
-        : 
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: "-40px",
-                flexDirection:"column"
-            }}>
-                <img src={mail} style={{
-                    width:"230px",
-                    height:"220px"
-                }}/>
-                <label
-                style={{
-                    fontWeight:"bold",
-                    fontSize: "25px",
-                    textAlign: "center",
-                    marginTop:"-20px"
-                }}
-                >Password reset email sent! Click the link in your inbox to continue.</label>
-                <button
-                onClick={()=>{
+            </>
+        ) : (
+            <div className="um-auth-endstate">
+                <img src={mail} style={{ width: 160, height: 160 }} />
+                <p className="um-auth-endstate-text">Password reset email sent! Click the link in your inbox to continue.</p>
+                {renderSubmitButton("Back to login", loading, () => {
                     setRetrievalEmail("");
                     setShowResetLinkPage(false);
                     signup(false);
-                }}           
-                style={{
-                    backgroundColor:"rgba(70, 180, 127, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"white",
-                    marginTop:"30px"
-                }}>
-                    
-                { loading === false ? "Back to login" 
-                    :
-                    <div style={{
-                        display:"flex",
-                        alignItems: "center",
-                        justifyContent:"center"
-                    }}>
-                        <div className="loaderSubmit"/>
-                    </div>}
-                </button>
-            </div> 
-            }
-            </>
-            }
-            </>
-
-            :
-            <>
-            {showVerifyPage===false?<div style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: "25px",
-                flexDirection:"column"
-            }}>
-                <label style={{
-                    fontSize: 28,
-                    fontWeight: "bold"
-                    }}>Wanna Get Your Business Started</label>
-                <label style={{
-                    color: "#979595ff",
-                    fontStyle: "italic"
-                }}>Fill the form below to register</label>
-
-                    <div style={{
-                        display: "flex",
-                        flexDirection:"row",
-                        position: "absolute",
-                        right: 70,
-                        bottom: 145,
-                        gap: 3,
-                    }}>
-                        <div style={{
-                            height: 5,
-                            width: 18,
-                            borderRadius: 5,
-                            backgroundColor: isShort ? "red" : isMedium ? "gold" : isLong ? "rgba(108, 197, 7, 1)" : "#3562"}}>
-                        </div>
-                        <div style={{
-                            height: 5,
-                            width: 18,
-                            borderRadius: 5,
-                            backgroundColor: isMedium ? "gold" : isLong ? "rgba(108, 197, 7, 1)" : "#3562"}}>
-                        </div>
-                        <div style={{
-                            height: 5,
-                            width: 18,
-                            borderRadius: 5,
-                            backgroundColor: isLong ? "rgba(108, 197, 7, 1)" : "#3562"}}>
-                        </div>
-                    </div>
-                {signupInputFields.map((input, i)=>{
-                    return( <div key={i} className="input-group"> 
-                            <input 
-                            placeholder=" "
-                            value = {signupData ? signupData[input.key] || "" : ""}
-                            onChange={(e)=>handleSignupDetails(input.key,e.target.value)}
-                            type={input.type}
-                            style={{
-                                borderWidth: 1,
-                                        paddingRight: 80,
-
-                                
-                                // paddingBottom: "20px"
-                            }}
-                            />
-
-                            <label>{input.name}</label>
-                            { input.key === "fullname"?
-                            <MdPerson  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            input.key ==="email" ? 
-                            <MdEmail  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            input.key ==="contact" ? 
-                            <MdPhone  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            input.key ==="password" ? 
-                            <MdLock  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                            input.key ==="confirm" ? 
-                            <MdLock  style={{
-                                    position: "absolute",
-                                    left: "5px",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    fontSize:"25px",
-                                    color:"#a9a9a9ff"
-                                }}/>
-                                :
-                                <div style={{
-
-                                }}>
-
-
-                                </div>
-
-                                
-                            // null
-                            
-                            }
-
-                        </div>)
-
-                        
-
-                        
                 })}
-                    <div className="select-group">
-                        <select
+            </div>
+        )
+    );
+
+    const renderSignupForm = () => (
+        showVerifyPage === false ? (
+            <>
+                <h1 className="um-auth-title">Start selling on campus</h1>
+                <p className="um-auth-subtitle">Set up your storefront in a few minutes</p>
+
+                {signupInputFields.map((input, i) => {
+                    const field = renderField(input, i, signupData, handleSignupDetails);
+                    if (input.key !== "password") return field;
+                    return (
+                        <div key={i}>
+                            {field}
+                            <div className="um-strength" style={{ marginTop: 8, marginLeft: 2 }}>
+                                <div className="um-strength-bar" style={{ background: isShort ? "var(--um-clay)" : (isMedium || isLong) ? "var(--um-marigold)" : undefined }} />
+                                <div className="um-strength-bar" style={{ background: isMedium ? "var(--um-marigold)" : isLong ? "var(--um-pine)" : undefined }} />
+                                <div className="um-strength-bar" style={{ background: isLong ? "var(--um-pine)" : undefined }} />
+                            </div>
+                        </div>
+                    );
+                })}
+
+                <div className="um-field" style={{ marginTop: 18 }}>
+                    <select
                         value={signupData.businessType}
-                        // style={{ color: signupData.businessType !== "" ? "black" : "#777" }}
-                        onChange={e =>
-                            setSignupData(prev => ({
-                            ...prev,
-                            businessType: e.target.value
-                            }))
-                        }
-                        >
-                        <option value="" >
-                            Business Type
-                        </option>
+                        onChange={e => setSignupData(prev => ({ ...prev, businessType: e.target.value }))}
+                    >
+                        <option value="">Business type</option>
                         <option value="restaurant">Restaurant</option>
                         <option value="shop">Shop</option>
-                        </select>
-                    </div>
-
-
-
-                <button 
-                onClick={
-                    ()=>{handleSubmit()
-
-                    //    console.table(signupData) 
-                    }
-                    // console.table(signupData)
-                }           
-                style={{
-                    backgroundColor:"rgba(70, 180, 127, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"white",
-                    marginTop:"30px"
-                }}>
-                { loading === false ? "Sign up" 
-                    :
-                    <div style={{
-                        display:"flex",
-                        alignItems: "center",
-                        justifyContent:"center"
-                    }}>
-                        <div className="loaderSubmit"/>
-                    </div>}
-                </button>
-                <div style={{
-                    display:"flex",
-                    justifyContent:"center",
-                    alignItems:"center"
-                }}>
-                    <div style={{
-                        borderWidth:1,
-                        marginTop: "40px",
-                        marginLeft:"25px",
-                        width: "450px",
-                        color:"#cac8c8ff"
-                    }}/>
-
-                    <label style={{
-                        position:"absolute",
-                        top: 690,
-                        fontWeight:"bold",
-                        backgroundColor:"white",
-                        paddingLeft: "20px",
-                        paddingRight: "20px"
-                    }}
-                    >Or sign up with</label>
+                    </select>
                 </div>
 
-                <button 
-                onClick={() => handleGoogleSignIn()}
-                style={{
-                    backgroundColor:"rgba(255, 255, 255, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"black",
-                    marginTop:"30px",
-                    borderColor: "#adacacff",
-                    overflow: "hidden",
-                    display: "flex",
-                    justifyContent: "center", // or "flex-start" if you want text left-aligned
-                    alignItems:"center",
-                    gap: "10px",              // space between icon and text
-                    borderWidth:1,
-                    marginBottom: "20px"
-               }}>
-                    <img src={google}
-                    style={{
-                        width:"30px",
-                        height:"30px",
-                    }}
-                    />
-                    Google
-                </button>
-                       
-           
-
-            </div> 
-            :
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: "-40px",
-                flexDirection:"column"
-            }}>
-                <img src={mail} style={{
-                    width:"230px",
-                    height:"220px"
-                }}/>
-                <label
-                style={{
-                    fontWeight:"bold",
-                    fontSize: "25px",
-                    textAlign: "center",
-                    marginTop:"-20px"
-                }}
-                >Verification link sent — check your email to continue.</label>
-                <button
-                onClick={()=>{
-                    handleResendLink();
-                }}           
-                style={{
-                    backgroundColor:"rgba(70, 180, 127, 1)",
-                    width: 450,
-                    height: 50,
-                    borderRadius: 10,
-                    marginLeft: "20px",
-                    fontWeight:"bold",
-                    color:"white",
-                    marginTop:"30px"
-                }}>
-                    
-                { loading === false ? "Resend verification email" 
-                    :
-                    <div style={{
-                        display:"flex",
-                        alignItems: "center",
-                        justifyContent:"center"
-                    }}>
-                        <div className="loaderSubmit"/>
-                    </div>}
-                </button>
-            </div>
-            // null    
-        }
+                {renderSubmitButton("Sign up", loading, handleSubmit)}
+                {renderDivider("Or sign up with")}
+                {renderGoogleButton(handleGoogleSignIn)}
             </>
-}
+        ) : (
+            <div className="um-auth-endstate">
+                <img src={mail} style={{ width: 160, height: 160 }} />
+                <p className="um-auth-endstate-text">Verification link sent — check your email to continue.</p>
+                {renderSubmitButton("Resend verification email", loading, handleResendLink)}
+            </div>
+        )
+    );
 
+  return (
+    <div className="um-auth-shell">
 
+      {/* Toast / notification */}
+      {visible && (
+        <div className="um-toast-stack">
+            <div
+                className={`um-toast ${isSuccess ? "" : "is-error"}`}
+                style={{
+                    transform: `translateY(${toastY}px)`,
+                    transition: 'transform 0.5s ease',
+                }}
+            >
+                <span className="um-toast-icon">
+                    {isSuccess ? <IoCheckmarkCircle /> : <IoCloseCircle />}
+                </span>
+                <span className="um-toast-text">{feedbackMessage}</span>
+                <div className="um-toast-progress" style={{ animationDuration: "2000ms" }} />
+            </div>
         </div>
-        </div>
+      )}
 
+      {/* Left: brand panel */}
+      <div className="um-auth-brand">
+        <div className="um-auth-brand-pattern" />
+        <div className="um-auth-brand-content">
+            <span className="um-auth-wordmark">UniMart</span>
+            <p className="um-auth-tagline">
+                The marketplace built for your campus — post what you sell,
+                reach students down the hall or across the quad.
+            </p>
+        </div>
+        <button
+            onClick={() => setSignup(!signup)}
+            className="um-btn um-btn-secondary um-auth-switch"
+        >
+            {signup ? "Have an account? Sign in" : "New here? Get started"}
+        </button>
       </div>
 
-      {/* Bottom container */}
-      <div
-        style={{
-          flex: 1,
-        // display: "flex",
-          backgroundColor: "#eee",
-          borderTopLeftRadius: "40px",
-          borderTopRightRadius: "40px",
-        }}
-      />
+      {/* Right: form panel */}
+      <div className="um-auth-form-panel um-scroll">
+        <div className="um-auth-form-inner">
+            {signup === false ? (
+                showResetLinkPage === false ? renderLoginForm() : renderForgotPassword()
+            ) : (
+                renderSignupForm()
+            )}
+        </div>
+      </div>
     </div>
   );
 }

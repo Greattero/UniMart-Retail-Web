@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState} from 'react';
-import { BiBriefcase, BiBriefcaseAlt, BiFile, BiFileBlank, BiHome, BiSolidBriefcase, BiSolidFile, BiSolidHome, BiSolidReport } from "react-icons/bi";
+import "./design-system.css";
+import { BiFile, BiHome, BiSolidBriefcase, BiSolidFile, BiSolidHome, BiBriefcase } from "react-icons/bi";
 
 
 function Sidebar({sendTabSignal}){
@@ -9,159 +10,77 @@ function Sidebar({sendTabSignal}){
                                                         manage: false,
     })
 
+    const navItems = [
+        { key: "dashboard", label: "Dashboard", Icon: BiHome, SolidIcon: BiSolidHome },
+        { key: "reports", label: "Reports", Icon: BiFile, SolidIcon: BiSolidFile },
+        { key: "manage", label: "Manage Business", Icon: BiBriefcase, SolidIcon: BiSolidBriefcase },
+    ];
+
+    const selectTab = (key) => {
+        setButtonClicked({
+            dashboard: key === "dashboard",
+            reports: key === "reports",
+            manage: key === "manage",
+        });
+        sendTabSignal?.(key);
+    };
 
     return(
-        <>
+        <div style={{
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "var(--um-pine-deep)",
+            minHeight: "100vh",
+            width: "260px",
+            flexShrink: 0,
+            padding: "28px 18px",
+        }}>
             <div style={{
-                display: "flex",
-                flexDirection:"column",
-                backgroundColor: "white",
-                minHeight: "100vh",
-                width: "17vw",
-                alignItems: "center",
-                
-                
+                paddingBottom: "22px",
+                marginBottom: "24px",
+                borderBottom: "1px solid rgba(255,255,255,0.12)",
             }}>
-                <div style={{
-                    marginTop: "30px",
-                    paddingBottom: "13px",
-                    borderBottomWidth: 1,
-                    borderBottomColor:"rgba(220, 221, 226, 1)",
-                    width: "32vw",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center"
+                <span style={{
+                    fontFamily: "var(--um-font-display)",
+                    fontWeight: 700,
+                    fontSize: "22px",
+                    color: "white",
+                    letterSpacing: "-0.01em",
                 }}>
-                    <h1 style={{
-                        color: "gray",
-                    }}>
-                        UniMart Retail
-                    </h1>
-                </div>
-
-                <div style={{
-                    marginTop: "60px",
-                    marginRight: "35px",
-                }}>
-                    <button 
-                    onClick={()=>{
-                        setButtonClicked(prev => ({
-                            dashboard: true,
-                            reports: false,
-                            manage: false
-                            }));
-                        sendTabSignal?.("dashboard");
-                        }}
-                    style={{
-                        color: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" :"gray",
-                        marginBottom: "30px",
-                        display:"flex",
-                        gap: 8,
-                        borderWidth: buttonClicked.dashboard===true ? 2 : null,
-                        padding: buttonClicked.dashboard===true ? "5px" : "5px",
-                        borderColor: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" : null,
-                        borderRadius: "10px",
-                        backgroundColor: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 0.1)" : null
-                    }}>
-                        <>
-                            { buttonClicked.dashboard=== true ?
-                            <BiSolidHome style={{
-                            fontSize:"20px",
-                            color: buttonClicked.dashboard===true ? "rgba(34, 136, 87, 1)" : "gray",
-                            marginTop: "2px",
-                            }}/>
-                            :
-                            <BiHome style={{
-                                fontSize:"20px",
-                                color: "gray",
-                                marginTop: "2px",
-                            }}/>}
-                        </>
-                        Dashboard
-                    </button >
-
-                    <button 
-                    onClick={()=>{
-                        setButtonClicked(prev => ({
-                            dashboard: false,
-                            reports: true,
-                            manage: false
-                            }));
-                        sendTabSignal?.("reports");
-                        }}
-                    style={{
-                        color: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" :"gray",
-                        marginBottom: "30px",
-                        display:"flex",
-                        gap: 8,
-                        borderWidth: buttonClicked.reports===true ? 2 : null,
-                        padding: buttonClicked.reports===true ? "5px" : "5px",
-                        borderColor: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" : null,
-                        borderRadius: "10px",
-                        backgroundColor: buttonClicked.reports===true ? "rgba(34, 136, 87, 0.1)" : null
-                    }}>
-                            <>
-                            
-                        { buttonClicked.reports=== true ?
-                            <BiSolidFile style={{
-                            fontSize:"20px",
-                            color: buttonClicked.reports===true ? "rgba(34, 136, 87, 1)" : "gray",
-                            marginTop: "2px",
-                        }}/>
-                            :
-                            <BiFile style={{
-                                fontSize:"20px",
-                                color: "gray",
-                                marginTop: "2px",
-                            }}/>}
-                        </>
-                        Reports
-                    </button>
-
-                    <button 
-                    onClick={()=>{
-                        setButtonClicked(prev => ({
-                            dashboard: false,
-                            reports: false,
-                            manage: true
-                            }));
-                        sendTabSignal?.("manage");
-                        }}
-                    style={{
-                        color: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" :"gray",
-                        marginBottom: "30px",
-                        display:"flex",
-                        gap: 8,
-                        borderWidth: buttonClicked.manage===true ? 2 : null,
-                        padding: buttonClicked.manage===true ? "5px" : "5px",
-                        borderColor: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" : null,
-                        borderRadius: "10px",
-                        backgroundColor: buttonClicked.manage===true ? "rgba(34, 136, 87, 0.1)" : null
-                    }}>
-                        
-                            <>
-                            
-                            { buttonClicked.manage=== true ?
-                            <BiSolidBriefcase style={{
-                            fontSize:"20px",
-                            color: buttonClicked.manage===true ? "rgba(34, 136, 87, 1)" : "gray",
-                            marginTop: "2px",
-                        }}/>
-                        :
-                        <BiBriefcase style={{
-                            fontSize:"20px",
-                            color: "gray",
-                            marginTop: "2px",
-                        }}/>}
-                        </>
-                        
-                        Manage Business
-                    </button>
-
-                </div>
-                
+                    UniMart
+                </span>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>Seller dashboard</div>
             </div>
-        </>
+
+            <nav style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {navItems.map(({ key, label, Icon, SolidIcon }) => {
+                    const active = buttonClicked[key];
+                    const IconToRender = active ? SolidIcon : Icon;
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => selectTab(key)}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "11px 14px",
+                                borderRadius: "10px",
+                                fontSize: 14,
+                                fontWeight: 600,
+                                textAlign: "left",
+                                color: active ? "white" : "rgba(255,255,255,0.62)",
+                                backgroundColor: active ? "rgba(255,255,255,0.12)" : "transparent",
+                                transition: "background-color 0.15s ease, color 0.15s ease",
+                            }}
+                        >
+                            <IconToRender style={{ fontSize: 18, flexShrink: 0 }} />
+                            {label}
+                        </button>
+                    );
+                })}
+            </nav>
+        </div>
     )
 
 }

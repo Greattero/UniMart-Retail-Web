@@ -1,4 +1,6 @@
 import React, {useState, useEffect} from "react";
+import "./design-system.css";
+import { FaUserCircle } from "react-icons/fa";
 
 
 function Header({style, getProlifeName}){
@@ -10,63 +12,32 @@ function Header({style, getProlifeName}){
     },[getProlifeName])
 
     return(
-    <>
         <div style={{
             backgroundColor: "white",
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            // position:"relative",
-
-            // padding: "0 20px",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--um-line)",
+            padding: "0 28px",
             ...style
         }}>
-            <div  style={{
-                    position:"relative"
-                }}>
-            <div style={{
-                borderLeftWidth: 1,
-                borderLeftColor: "rgba(220, 221, 226, 1)",
-                height: "4.5vh",
-                display: "flex",
-                flexDirection: "row",
-                paddingBottom: "40px",
-                // alignItems: "center",
-                justifyContent: "center",
-            }}
-            
-            >
-                <div style={{
-                    position:"relative"
-                }}>
+            <p style={{
+                fontFamily: "var(--um-font-display)",
+                fontWeight: 600,
+                fontSize: "22px",
+                color: "var(--um-ink)",
+            }}>
+                Dashboard
+            </p>
 
-                <p style={{
-                    // position:"absolute",
-                    // left: 20,
-                    // marginTop: 15,
-                    fontWeight:"bold",
-                    fontSize:"25px",
-                    marginLeft:"20px"
-                   
-
-                }}>Dashboard</p>
-
-                <p style={{
-                    // position:"absolute",
-                    // right: 10,
-                    // marginTop: 15,
-                    marginTop: "-30px",
-                    paddingLeft: "70vw"
-                    
-                }}>{profile}</p>
-                </div>
-
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <FaUserCircle style={{ fontSize: 22, color: "var(--um-ink-faint)" }} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--um-ink-soft)" }}>
+                    {profile}
+                </span>
             </div>
-            </div>
-            
         </div>
-        
-    </>
     )
 
 }

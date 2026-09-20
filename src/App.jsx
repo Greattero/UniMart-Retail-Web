@@ -25,7 +25,7 @@ function App() {
         display: "flex",
         height: "100vh",
         width: "100vw",
-        backgroundColor: "rgba(231, 232, 231, 1)",
+        backgroundColor: "var(--um-canvas)",
         overflow: "hidden", // VERY IMPORTANT
       }}>
 {  isLoggedIn === true ?
@@ -34,19 +34,21 @@ function App() {
     sendTabSignal={setTab}
     />
 
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-      <Header style={{ height: "9vh" }} 
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <Header style={{ height: "64px" }}
       getProlifeName={business}
       />
-      {tab === "dashboard" && <Orders style={{ flex: 1, marginTop: "15px", marginLeft:"52px", minWidth:"100vw"}} 
+      <div style={{ flex: 1, overflowY: "auto", paddingTop: "24px" }}>
+      {tab === "dashboard" && <Orders
       getMyProfile={seller}
       />}
-      {tab === "manage" && <ManageBusiness 
+      {tab === "manage" && <ManageBusiness
       style={{ flex: 1, marginTop: "20px", marginLeft:"40px", minWidth:"100vw"}}
       getSeller={seller}
       getBusinessType={typeOfBusiness}
       getNameofBusiness={business}
       />}
+      </div>
     </div>
   </>
 :

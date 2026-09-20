@@ -1,0 +1,384 @@
+/* ============================================================
+   UniMart Design System
+   A campus-marketplace visual language: grounded, trustworthy
+   greens, a warm marigold accent for attention/energy, and a
+   geometric display face that reads "campus tech" rather than
+   generic corporate SaaS.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---- Color: named tokens ---- */
+  --um-canvas: #F4F6F2;      /* app background, cool sage-tinted paper */
+  --um-surface: #FFFFFF;     /* cards, panels, inputs */
+  --um-ink: #16261D;         /* primary text, deep pine-black */
+  --um-ink-soft: #5B675E;    /* secondary text */
+  --um-ink-faint: #93A096;   /* placeholder / tertiary text */
+  --um-pine: #1F7A4D;        /* brand primary */
+  --um-pine-dark: #15613C;   /* brand primary, hover/pressed */
+  --um-pine-deep: #123D28;   /* dark brand panel */
+  --um-pine-wash: #E6F1EA;   /* tinted brand surface */
+  --um-marigold: #E3A63D;    /* accent — energy, highlights, warnings */
+  --um-marigold-wash: #FBF0DB;
+  --um-clay: #B8452F;        /* danger / cancel */
+  --um-clay-wash: #F8E7E2;
+  --um-line: #E1E4DC;        /* hairline borders */
+  --um-line-soft: #EDEFEA;
+
+  /* ---- Type ---- */
+  --um-font-display: "Space Grotesk", "DM Sans", sans-serif;
+  --um-font-body: "DM Sans", sans-serif;
+
+  /* ---- Elevation ---- */
+  --um-shadow-sm: 0 1px 2px rgba(18, 38, 26, 0.06);
+  --um-shadow-md: 0 8px 24px rgba(18, 38, 26, 0.09);
+  --um-shadow-lg: 0 20px 48px rgba(18, 38, 26, 0.16);
+
+  /* ---- Radius ---- */
+  --um-radius-sm: 8px;
+  --um-radius-md: 14px;
+  --um-radius-lg: 22px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--um-canvas);
+  color: var(--um-ink);
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.um-btn {
+  font-family: var(--um-font-body);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: var(--um-radius-sm);
+  border: 1px solid transparent;
+  padding: 13px 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+.um-btn:active { transform: scale(0.98); }
+.um-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.um-btn-primary {
+  background: var(--um-pine);
+  color: white;
+}
+.um-btn-primary:hover:not(:disabled) { background: var(--um-pine-dark); }
+
+.um-btn-secondary {
+  background: var(--um-surface);
+  color: var(--um-ink);
+  border-color: var(--um-line);
+}
+.um-btn-secondary:hover:not(:disabled) { background: var(--um-line-soft); }
+
+.um-btn-ghost {
+  background: transparent;
+  color: var(--um-ink-soft);
+  padding: 8px 4px;
+}
+.um-btn-ghost:hover:not(:disabled) { color: var(--um-pine); }
+
+.um-btn-danger {
+  background: var(--um-clay);
+  color: white;
+}
+.um-btn-danger:hover:not(:disabled) { background: #9c3a26; }
+
+.um-btn-block { width: 100%; }
+
+/* ============================================================
+   Inputs (floating label)
+   ============================================================ */
+
+.um-field {
+  position: relative;
+  width: 100%;
+}
+
+.um-field input,
+.um-field select {
+  width: 100%;
+  padding: 15px 14px 15px 44px;
+  font-family: var(--um-font-body);
+  font-size: 15px;
+  color: var(--um-ink);
+  background: var(--um-surface);
+  border: 1.5px solid var(--um-line);
+  border-radius: var(--um-radius-sm);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.um-field select { padding-left: 14px; appearance: none; cursor: pointer; }
+
+.um-field input:focus,
+.um-field select:focus {
+  border-color: var(--um-pine);
+  box-shadow: 0 0 0 3px var(--um-pine-wash);
+}
+
+.um-field label {
+  position: absolute;
+  left: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--um-ink-faint);
+  background: var(--um-surface);
+  padding: 0 5px;
+  pointer-events: none;
+  transition: 0.15s ease;
+}
+
+.um-field input:focus + label,
+.um-field input:not(:placeholder-shown) + label {
+  top: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--um-pine);
+}
+
+.um-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--um-ink-faint);
+  pointer-events: none;
+}
+
+.um-field select ~ .um-field-icon { display: none; }
+
+/* strength meter */
+.um-strength { display: flex; gap: 4px; }
+.um-strength-bar { height: 4px; width: 22px; border-radius: 4px; background: var(--um-line); transition: background 0.2s ease; }
+
+/* ============================================================
+   Toast / notification
+   ============================================================ */
+
+.um-toast-stack {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.um-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--um-surface);
+  border-radius: var(--um-radius-sm);
+  box-shadow: var(--um-shadow-lg);
+  padding: 14px 16px;
+  min-width: 280px;
+  max-width: 360px;
+  border-left: 4px solid var(--um-pine);
+  overflow: hidden;
+  position: relative;
+}
+
+.um-toast.is-error { border-left-color: var(--um-clay); }
+
+.um-toast-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  background: var(--um-pine);
+  margin-top: 1px;
+}
+.um-toast.is-error .um-toast-icon { background: var(--um-clay); }
+
+.um-toast-text {
+  font-family: var(--um-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--um-ink);
+  line-height: 1.4;
+}
+
+.um-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--um-pine);
+  animation: um-toast-shrink linear forwards;
+}
+.um-toast.is-error .um-toast-progress { background: var(--um-clay); }
+
+@keyframes um-toast-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* ============================================================
+   Cards / surfaces
+   ============================================================ */
+
+.um-card {
+  background: var(--um-surface);
+  border-radius: var(--um-radius-lg);
+  border: 1px solid var(--um-line);
+}
+
+.um-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 999px;
+}
+.um-badge-pine { background: var(--um-pine-wash); color: var(--um-pine-dark); }
+.um-badge-marigold { background: var(--um-marigold-wash); color: #8A5F17; }
+.um-badge-clay { background: var(--um-clay-wash); color: var(--um-clay); }
+.um-badge-neutral { background: var(--um-line-soft); color: var(--um-ink-soft); }
+
+/* scrollbars, kept subtle */
+.um-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.um-scroll::-webkit-scrollbar-thumb { background: var(--um-line); border-radius: 8px; }
+.um-scroll::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .um-btn, .um-field input, .um-field label, .um-toast-progress { transition: none; animation: none; }
+}
+
+/* ============================================================
+   Auth screen (LoginSignup)
+   ============================================================ */
+
+.um-auth-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--um-surface);
+  font-family: var(--um-font-body);
+}
+
+.um-auth-brand {
+  position: relative;
+  flex: 0 0 42%;
+  min-height: 100vh;
+  background: var(--um-pine-deep);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 48px;
+  overflow: hidden;
+}
+
+.um-auth-brand-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.08) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at 30% 20%, black 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.um-auth-brand-content { position: relative; z-index: 1; }
+
+.um-auth-wordmark {
+  font-family: var(--um-font-display);
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+  color: white;
+}
+
+.um-auth-tagline {
+  margin-top: 22px;
+  max-width: 340px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.72);
+}
+
+.um-auth-switch {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.22);
+  color: white;
+}
+.um-auth-switch:hover { background: rgba(255,255,255,0.18); }
+
+.um-auth-form-panel {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 64px 32px;
+  overflow-y: auto;
+}
+
+.um-auth-form-inner {
+  width: 100%;
+  max-width: 420px;
+  padding-bottom: 40px;
+}
+
+.um-auth-title {
+  font-family: var(--um-font-display);
+  font-weight: 600;
+  font-size: 30px;
+  color: var(--um-ink);
+  letter-spacing: -0.01em;
+}
+
+.um-auth-subtitle {
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--um-ink-soft);
+}
+
+.um-auth-endstate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 24px;
+}
+
+.um-auth-endstate-text {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--um-ink);
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .um-auth-shell { flex-direction: column; }
+  .um-auth-brand { flex: none; min-height: 260px; padding: 36px 28px; }
+  .um-auth-form-panel { min-height: auto; padding: 40px 24px 64px; }
+}

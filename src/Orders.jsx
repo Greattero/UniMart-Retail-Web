@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState} from 'react';
-import {BiCalendar, BiHome} from "react-icons/bi";
+import "./design-system.css";
+import {BiCalendar} from "react-icons/bi";
 import { IoEyeSharp } from "react-icons/io5";
 import { app } from "./firebaseConfig.js"; // your firebaseConfig file
 import { get, getDatabase, limitToFirst, orderByKey, query, ref, startAt, update } from "firebase/database";
@@ -25,6 +26,7 @@ function Orders({style, getMyProfile}){
     
     const loadingRef = useRef(false);
     const lastKeyRef = useRef(null);
+    const scrollContainerRef = useRef(null);
 
     const PAGE_SIZE = 10;
 
@@ -72,31 +74,24 @@ function Orders({style, getMyProfile}){
     }
 
     useEffect(()=>{
+        const container = scrollContainerRef.current;
+        if(!container) return;
+
         const handleScroll = ()=>{
-            const {scrollTop, scrollHeight, clientHeight} = document.documentElement;
+            const {scrollTop, scrollHeight, clientHeight} = container;
 
             if(scrollTop + clientHeight >=  scrollHeight - 20){
                 loadOrders(false);
             }
         };
-        window.addEventListener("scroll", handleScroll);
-        return()=> window.removeEventListener("scroll", handleScroll);
+        container.addEventListener("scroll", handleScroll);
+        return()=> container.removeEventListener("scroll", handleScroll);
 
     },[hasMore, myProfile]);
 
     useEffect(()=>{
         if(myProfile) loadOrders(true);
     }, [myProfile]);
-
-    // get(ref(db, `restaurants/${myProfile}/myOrders`)).then((snapshot)=>{
-    //     const data = snapshot.val() || [];
-    //     const ordersArray = Object.entries(data).map(([id, order]) => ({
-    //         id,
-    //         ...order,
-    //     }));
-    //     setOrders(ordersArray);
-    //     // console.log(data);
-    // })
 
     const handleAccept = (id, buyerPath) => {
     update(ref(db, `buyer-profiles/${buyerPath}/purchases/${id}`), {
@@ -106,11 +101,6 @@ function Orders({style, getMyProfile}){
     update(ref(db, `restaurants/${myProfile}/myOrders/${id}`), {
         status: "accepted",
     });
-
-    // setIsAcceptOrder(prev => ({
-    //     ...prev,
-    //     [confirmid]: true,
-    // }));
     };
 
     const handleCancel = (id, buyerPath) => {
@@ -121,14 +111,7 @@ function Orders({style, getMyProfile}){
     update(ref(db, `restaurants/${myProfile}/myOrders/${id}`), {
         status: "cancelled",
     });
-
-    // setIsAcceptOrder(prev => ({
-    //     ...prev,
-    //     [confirmid]: true,
-    // }));
     };
-
-    // console.log(myOrder);
 
     const handleViewDetails = (buyer, contact, foodName, price, addOns)=>{
         setShowViewDetails(true);
@@ -151,542 +134,182 @@ function Orders({style, getMyProfile}){
 
     }
 
+    // ---- render helpers (no logic, layout only) ----
 
-    
+    const truncate = (text, len = 15) => text && text.length > len ? text.slice(0, len) + "..." : text;
 
+    const statusCell = (order) => {
+        if (order.status === "accepted") {
+            return (
+                <button
+                    onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
+                    className="um-btn"
+                    style={{ backgroundColor: "var(--um-ink)", color: "white", width: "100%" }}
+                >
+                    <IoEyeSharp /> View order
+                </button>
+            );
+        }
+        if (order.status === "cancelled") {
+            return <span className="um-badge um-badge-clay" style={{ width: "100%", justifyContent: "center" }}>Cancelled</span>;
+        }
+        if (order.status === "complete") {
+            return (
+                <button
+                    onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
+                    className="um-btn"
+                    style={{ backgroundColor: "#4B2E8F", color: "white", width: "100%" }}
+                >
+                    Completed 💜
+                </button>
+            );
+        }
+        return (
+            <div style={{ display: "flex", gap: 8, width: "100%" }}>
+                <button
+                    onClick={()=>{ handleAccept(order.id,order.buyerProfile); console.log("deep",order.id,order.buyerProfile); }}
+                    className="um-btn um-btn-primary"
+                    style={{ flex: 1, padding: "8px 10px", fontSize: 13 }}
+                >Accept</button>
+                <button
+                    onClick={()=>{ handleCancel(order.id,order.buyerProfile); console.log("deep",order.id,order.buyerProfile); }}
+                    className="um-btn um-btn-danger"
+                    style={{ flex: 1, padding: "8px 10px", fontSize: 13 }}
+                >Cancel</button>
+            </div>
+        );
+    };
 
+    const detailRow = (label, value, accent) => (
+        <div style={{ marginBottom: 16 }}>
+            <div style={{
+                background: "var(--um-line-soft)",
+                borderRadius: "var(--um-radius-sm)",
+                padding: "10px 14px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontWeight: 600,
+                fontSize: 13,
+                color: "var(--um-ink-soft)",
+            }}>
+                {label}
+                {accent && <span style={{ color: "var(--um-clay)", fontWeight: 700 }}>{accent}</span>}
+            </div>
+            <div style={{ marginTop: 8, marginLeft: 4, fontSize: 15, color: "var(--um-ink)" }}>{value}</div>
+        </div>
+    );
+
+    const columns = [
+        { label: "Order ID", width: "13%" },
+        { label: "Food", width: "17%" },
+        { label: "Customer", width: "17%" },
+        { label: "Contact", width: "14%" },
+        { label: "Date", width: "13%" },
+        { label: "Status", width: "26%" },
+    ];
 
     return(
-        <>
-            <div
-            style={{
-                ...style
-            }}
-            >
-                <div  style={{
-                    position:"relative"
-                }}>
-                <p style={{
-                    paddingBottom: "20px",
-                    fontSize: "25px",
-                    fontWeight:"bold"
-                }}>Orders</p>
-                <div style={{
-                    height: "13vh",
-                    width: "76vw",
-                    backgroundColor: "white",
-                    borderRadius: " 20px",
-                    display: "flex",
-                    alignItems: "center",
-                }}>
+        <div style={{ ...style, padding: "0 32px 32px" }}>
+            <p style={{ fontFamily: "var(--um-font-display)", fontSize: 24, fontWeight: 600, marginBottom: 20 }}>Orders</p>
 
-                    <div style={{
-                    marginLeft: "20px",
-                    display: "flex",
-                    borderRightWidth: 1,
-                    height: "13vh",
-                    width: "7vw",
-                    alignItems: "center",
-                    borderRightColor: "rgba(231, 232, 231, 1)",
-
-                    }}>
-                        <BiCalendar style={{
-                            fontSize:"20px",
-                            color: "black",
-                            marginTop: "2px",
-                        }}/>
-                        <p>Today</p>
-                    </div>
-
-
-                    <div style={{
-                    marginLeft: "20px",
-                    display: "flex",
-                    borderRightWidth: 1,
-                    height: "13vh",
-                    width: "15vw",
-                    alignItems: "center",
-                    borderRightColor: "rgba(231, 232, 231, 1)",
-                    flexDirection: "column",
-                    overflow: "hidden"
-
-                    }}>
-                        <p style={{
-                            fontSize:13,
-                            color: "gray",
-                            marginRight:"140px",
-                            marginTop:"15px",
-                            display:"flex",
-
-
-                        }}                        
-                        >Total Revenue</p>
-
-                        <p style={{
-                            color: "black",
-                            marginTop:"15px",
-                            marginRight:"130px",
-                            fontSize: "30px",
-                            fontWeight:"bold"
-
-                        }} >$8000</p>
-                    </div>
-
-                    <div style={{
-                    marginLeft: "20px",
-                    display: "flex",
-                    borderRightWidth: 1,
-                    height: "13vh",
-                    width: "15vw",
-                    alignItems: "center",
-                    borderRightColor: "rgba(231, 232, 231, 1)",
-                    flexDirection: "column",
-                    overflow: "hidden"
-
-                    }}>
-
-                        <p style={{
-                            fontSize:13,
-                            color: "gray",
-                            marginRight:"120px",
-                            marginTop:"15px",
-                            display:"flex",
-                        }}
-                        
-                        >Total Orders</p>
-
-                        <p style={{
-                            color: "black",
-                            marginTop:"15px",
-                            marginRight:"135px",
-                            fontSize: "30px",
-                            fontWeight:"bold"
-
-                        }} >330</p>
-                    </div>
-
-                    <div style={{
-                    marginLeft: "20px",
-                    display: "flex",
-                    borderRightWidth: 1,
-                    height: "13vh",
-                    width: "15vw",
-                    alignItems: "center",
-                    borderRightColor: "rgba(231, 232, 231, 1)",
-
-                    }}>
-                        <BiCalendar style={{
-                            fontSize:"20px",
-                            color: "black",
-                            marginTop: "2px",
-                        }}/>
-                        <p>Today</p>
-                    </div>
-                    </div>
-
-
+            {/* Stat cards */}
+            <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+                <div className="um-card" style={{ flex: 1, padding: "18px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <BiCalendar style={{ fontSize: 20, color: "var(--um-pine)" }} />
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>Today</span>
                 </div>
-                
-                <div style={{
-                height: "62vh",
-                width: "76vw",
-                display: "flex", 
-                // borderRadius:"5px",
-                backgroundColor:"white",
-                marginTop:"30px",
-                paddingTop:"10px",
-                alignItems:"center",
-                justifyContent:"center",
-                borderRadius: "20px",
-                }}>
-                <div style={{
-                height: "57vh",
-                width: "76vw",
-                overflow: "scroll",
-                backgroundColor: "white",
-                // borderRadius: " 20px",
-                display: "flex",
-                alignItems: "center",
-                marginTop: "3.5px",
-                flex: 1,
-                flexDirection:"column",                
-                }}>
-
-                    <div style={{
-                        height: "50px",
-                        width: "73vw",
-                        backgroundColor: "#ffc0cbff",
-                        borderRadius: " 10px",
-                        marginTop:"0px",
-                        // marginLeft:"7px",
-                        display: "flex",
-                        justifyContent:"center",
-                        flexDirection: "column",
-                        position: "sticky",   // <-- make it sticky
-                        top: 0,               // <-- stick to top
-                        zIndex: 10,
-                    }}>
-
-                        <div style={{
-                            display: "flex",
-                            flexDirection:"row",
-                            marginTop: "20px",
-                            marginBottom:"20px",
-                            marginRight:"40px",
-                            marginLeft:"-20px",
-                            gap: 30,
-                        }}>
-
-                    <div style={{
-                            color: "black",
-                            width: "10vw",
-                            display: "flex",
-                            justifyContent: "center",
-                    }}>
-                        <p>Order Id</p>
-                        </div>
-                    <div style={{
-                            color: "black",
-                            width: "10vw",
-                            display: "flex",
-                            justifyContent: "center",
-                    }}>
-                        <p>Food</p>
-                        </div>
-                    <div style={{
-                            color: "black",
-                            width: "10vw",
-                            display: "flex",
-                            justifyContent: "center",
-                    }}>
-                        <p>Customer</p>
-                        </div>
-                    <div style={{
-                             color: "black",
-                            width: "8vw",
-                            display: "flex",
-                            justifyContent: "center",
-                    }}>
-                        <p>Contact</p>
-                        </div>
-                    <div style={{
-                            color: "black",
-                            width: "10vw",
-                            display: "flex",
-                            justifyContent: "center",
-                    }}>
-                        <p>Date</p>
-                        </div>
-                        <div style={{
-                            color: "black",
-                            width: "15vw",
-                            display: "flex",
-                            justifyContent: "center",
-                        }}> 
-                        <p>Status</p>
-                        </div>
-                        </div>
-
-                    </div>
-                       <div style={{
-                        height: "6.5vh",
-                        width: "75vw",
-                        // backgroundColor: "#ffc0cb76",
-                        borderRadius: " 10px",
-                        marginTop:"5px",
-                        display: "flex",
-                        alignItems:"center",
-                        flexDirection:"column",
-                    }}>
-                        
-            {orders.map((order, i) => {
-                return (
-                <div
-                    key={i}
-                    style={{
-                    display: "flex",
-                    flexDirection:"row",
-                    marginLeft:"20px",
-                    marginBottom:"20px",
-                    gap: 20,
-                    }}
-                >
-                    <div style={{
-                        width: "10vw",
-                    }}>
-                    <p>{order.orderId}</p>
-                    </div>
-                    <div style={{
-                        width: "10vw",
-                    }}>
-                    <p>{order.foodName.length > 15 ? order.foodName.slice(0,15) + "..." : order.foodName}</p>
-                    </div>
-                    <div style={{
-                        width: "10vw",
-                    }}>
-                    <p>{order.buyer.length > 15 ? order.buyer.slice(0,15) + "..." : order.buyer}</p>
-                    </div>
-                    <div style={{
-                        width: "10vw",
-                    }}>
-                    <p>{order.contact}</p>
-                    </div>
-                    <div style={{
-                        width: "10vw",
-                    }}>
-                    <p>{order.date}</p>
-                    </div>
-                    <div style={{
-                        // width: "10vw",
-                        display: "flex",
-                        flexDirection: "row",
-                        gap: 10,
-
-                    }}>
-                        { order.status === "accepted" ? (
-                            
-                        <button 
-                        onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
-                        style={{
-                            backgroundColor: "rgba(0, 0, 0, 1)",
-                            color: "white",
-                            width: "14.7vw",
-                            display: "flex",
-                            justifyContent: "center",
-                            borderRadius: "5px",
-                            gap: 5,
-                        }}
-                        >
-                            <IoEyeSharp style={{
-                                marginTop: "4px"
-                            }}/>
-                            View Order</button>)
-                        
-                        : order.status === "cancelled" ?
-                        <button style={{
-                            backgroundColor: "rgba(110, 110, 110, 1)",
-                            color: "white",
-                            width: "14.7vw",
-                            display: "flex",
-                            justifyContent: "center",
-                            borderRadius: "5px",
-                            gap: 5,
-                        }}
-                        >
-
-                            Order Cancelled</button>
-
-                        : order.status === "complete" ?
-                        <button 
-                        onClick={()=>handleViewDetails(order.buyer,order.contact,order.foodName,order.price,order.addOns)}
-                        style={{
-                            backgroundColor: "rgba(63, 3, 124, 1)",
-                            color: "white",
-                            width: "14.7vw",
-                            display: "flex",
-                            justifyContent: "center",
-                            borderRadius: "5px",
-                            gap: 5,
-                        }}
-                        >
-
-                            Order Completed 💜</button>
-                        :
-
-                    <>
-                        <button style={{
-                            backgroundColor: "rgba(18, 125, 54, 1)",
-                            color: "white",
-                            width: "7vw",
-                            display: "block",
-                            justifyContent: "center",
-                            borderRadius: "5px"
-                        }}
-                        onClick={()=>{
-                                        handleAccept(order.id,order.buyerProfile);
-                                        console.log("deep",order.id,order.buyerProfile)
-                    }}
-                        >Accept</button>
-
-                        <button 
-                        onClick={()=>{
-                                        handleCancel(order.id,order.buyerProfile);
-                                        console.log("deep",order.id,order.buyerProfile)
-                    }}
-                        style={{
-                            backgroundColor: "rgba(194, 44, 44, 1)",
-                            color: "white",
-                            width: "7vw",
-                            display: "block",
-                            justifyContent: "center",
-                            borderRadius: "5px"
-                        }}
-                        >Cancel</button>
-                    </>
-                    
-            }
-            {/* {console.log(order.addOns)} */}
-                    </div>
+                <div className="um-card" style={{ flex: 1, padding: "18px 20px" }}>
+                    <p style={{ fontSize: 13, color: "var(--um-ink-soft)" }}>Total Revenue</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>$8000</p>
                 </div>
-                );
-            })}
-            {isLoading && <p>Loading...</p>}
-            </div>
+                <div className="um-card" style={{ flex: 1, padding: "18px 20px" }}>
+                    <p style={{ fontSize: 13, color: "var(--um-ink-soft)" }}>Total Orders</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>330</p>
                 </div>
             </div>
 
-                {showViewDetails===true && <div style={{
-                    position: "fixed",
+            {/* Orders table */}
+            <div ref={scrollContainerRef} className="um-card um-scroll" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+                <div style={{
+                    display: "flex",
+                    padding: "14px 20px",
+                    position: "sticky",
                     top: 0,
-                    left:0,
-                    width: "100vw",
-                    height: "100vh",
-                    backgroundColor: "rgba(0,0,0,0.5)",
+                    background: "var(--um-surface)",
+                    borderBottom: "1px solid var(--um-line)",
+                    zIndex: 5,
+                }}>
+                    {columns.map(col => (
+                        <div key={col.label} style={{ width: col.width, fontSize: 12, fontWeight: 700, color: "var(--um-ink-faint)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                            {col.label}
+                        </div>
+                    ))}
+                </div>
+
+                {orders.map((order, i) => (
+                    <div key={i} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "14px 20px",
+                        borderBottom: "1px solid var(--um-line-soft)",
+                    }}>
+                        <div style={{ width: columns[0].width, fontSize: 14 }}>{order.orderId}</div>
+                        <div style={{ width: columns[1].width, fontSize: 14 }}>{truncate(order.foodName)}</div>
+                        <div style={{ width: columns[2].width, fontSize: 14 }}>{truncate(order.buyer)}</div>
+                        <div style={{ width: columns[3].width, fontSize: 14 }}>{order.contact}</div>
+                        <div style={{ width: columns[4].width, fontSize: 14, color: "var(--um-ink-soft)" }}>{order.date}</div>
+                        <div style={{ width: columns[5].width }}>{statusCell(order)}</div>
+                    </div>
+                ))}
+
+                {orders.length === 0 && !isLoading && (
+                    <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--um-ink-faint)", fontSize: 14 }}>
+                        No orders yet — new orders will show up here.
+                    </div>
+                )}
+                {isLoading && <p style={{ padding: "16px 20px", fontSize: 13, color: "var(--um-ink-faint)" }}>Loading…</p>}
+            </div>
+
+            {/* Order details modal */}
+            {showViewDetails===true && (
+                <div style={{
+                    position: "fixed",
+                    inset: 0,
+                    backgroundColor: "rgba(18, 38, 26, 0.45)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    zIndex: 1000
-
+                    zIndex: 1000,
                 }}>
-                    <div style={{
-                        width: "36vw",
-                        height: "62vh",
-                        backgroundColor: "white",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "20px",
-
+                    <div className="um-card um-scroll" style={{
+                        width: "min(480px, 92vw)",
+                        maxHeight: "80vh",
+                        overflowY: "auto",
+                        padding: 28,
+                        boxShadow: "var(--um-shadow-lg)",
                     }}>
-                    <div style={{
-                        width: "35vw",
-                        height: "60vh",
-                        backgroundColor: "white",
-                        overflowY: "scroll"
-
-                        // position: "fixed",
-                        // left: 450,
-                        // top: 100,
-                    }}>
-                        <h1 style={{
-                            margin: "20px",
-                            fontSize: "35px",
-                            fontWeight: "bold",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}>Full Order Details
-                        
-                        <button
-                            onClick={()=>handleExitViewDetails()}
-                            style={{
-                                color: "#554f4fff"                                
-                            }}
-                        >
-                            <IoMdClose />
-                        </button>
-                        
-                        </h1>
-
-                        <div style={{
-                            display: "flex",
-                            flexDirection: "column"
-                        }}>
-
-                            <label style={{
-                                marginLeft:"20px",
-                                // marginTop: "5px",
-                                backgroundColor: "#eee",
-                                width: "32.5vw",
-                                height: "5vh",
-                                display: "flex",
-                                alignItems: "center",
-                                borderRadius: "5px",
-                                paddingLeft: "15px",
-                                fontWeight:"bold"
-                                }}>Name </label>
-                                <label style={{
-                                marginLeft:"30px",
-                                marginTop: "15px"
-
-                                }}>{viewBuyer}</label>
-                            <label style={{
-                                marginLeft:"20px",
-                                marginTop: "15px",
-                                backgroundColor: "#eee",
-                                width: "32.5vw",
-                                height: "5vh",
-                                display: "flex",
-                                alignItems: "center",
-                                borderRadius: "5px",
-                                paddingLeft: "15px",
-                                fontWeight:"bold",
-                                }}>Contact </label>
-                                <label style={{
-                                marginLeft:"30px",
-                                marginTop: "15px"
-
-                                }}>{viewContact}</label>
-
-                            <label style={{
-                                marginLeft:"20px",
-                                marginTop: "15px",
-                                backgroundColor: "#eee",
-                                width: "32.5vw",
-                                height: "5vh",
-                                display: "flex",
-                                alignItems: "center",
-                                borderRadius: "5px",
-                                paddingLeft: "15px",
-                                fontWeight:"bold",
-                            }}>{`Food Details`}                                
-                            <span
-                                style={{
-                                    color: "red",
-                                    marginLeft: "auto",
-                                    fontWeight:"bold"
-                                }}
-                                >{`GH₵${viewFoodPrice}`}</span> 
-                                </label>
-
-                                <label style={{
-                                marginLeft:"30px",
-                                marginTop: "15px",
-                                fontWeight:"bold",
-                                fontSize: 18
-
-                                }}>{`${viewFoodName} `}
-                                
-                                </label>
-
-                                {Object.keys(viewAddons).filter(key=>viewAddons[key]).map((viewAddon)=>{
-
-                                    return(
-                                <label 
-                                key={viewAddon}
-                                style={{
-                                marginLeft:"30px",
-                                marginTop: "15px",
-                                fontStyle:"italic"
-
-                                }}>{viewAddon}</label>
-
-                                    )
-                                })}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h1 style={{ fontFamily: "var(--um-font-display)", fontSize: 22, fontWeight: 600 }}>Order details</h1>
+                            <button onClick={()=>handleExitViewDetails()} className="um-btn-ghost" style={{ fontSize: 20 }}>
+                                <IoMdClose />
+                            </button>
                         </div>
 
+                        {detailRow("Name", viewBuyer)}
+                        {detailRow("Contact", viewContact)}
+                        {detailRow("Food details", (
+                            <>
+                                <div style={{ fontWeight: 700, fontSize: 16 }}>{viewFoodName}</div>
+                                {Object.keys(viewAddons).filter(key=>viewAddons[key]).map((viewAddon)=>(
+                                    <div key={viewAddon} style={{ fontStyle: "italic", marginTop: 6, color: "var(--um-ink-soft)" }}>{viewAddon}</div>
+                                ))}
+                            </>
+                        ), `GH₵${viewFoodPrice}`)}
                     </div>
-                    </div>
-
-
-                </div>}
-
-
-
-
-                
-            </div>        
-        </>
+                </div>
+            )}
+        </div>
     )
 
 }

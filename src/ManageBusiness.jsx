@@ -222,18 +222,58 @@ function ManageBusiness({style, getSeller, getBusinessType, getNameofBusiness}){
         })
     }
 
+    // Resizes and re-encodes an image client-side before upload — quality 0.8,
+// capped at 1000px on the long edge. Keeps file sizes small (usually a few
+// hundred KB instead of several MB from a phone camera) with no visible
+// quality loss at the sizes we ever display images at.
+const compressImage = (sourceFile, { maxWidth = 1000, quality = 0.8 } = {}) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, maxWidth / img.width);
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error("Canvas compression failed"));
+                        return;
+                    }
+                    resolve(new File([blob], sourceFile.name, { type: "image/jpeg" }));
+                }, "image/jpeg", quality);
+            };
+            img.onerror = reject;
+            img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(sourceFile);
+    });
+};
+
     const handleUpload = async (e) => {
 
-        const file = e.target.files[0]; // 👈 use this
+        const rawFile = e.target.files[0]; // 👈 use this
 
-        setFile(file);
+        if (!rawFile) return;
 
         const businessId = "umr123"
 
-        if (!file) return;
+        let file;
+        try {
+            file = await compressImage(rawFile, { maxWidth: 1000, quality: 0.8 });
+        } catch (err) {
+            console.log("Image compression failed, uploading original file:", err);
+            file = rawFile;
+        }
 
-        const nameOnly = file?.name.split(".")?.slice(0,-1).join("");
-        const fileExt = file?.name?.split(".")?.pop();
+        setFile(file);
+
+        const nameOnly = rawFile?.name.split(".")?.slice(0,-1).join("");
+        const fileExt = "jpg"; // compressed output is always re-encoded as jpeg
         {console.log(`aaaa ${file}`)}
         const fileName = `${businessId}${nameOnly}.${fileExt}`;
         const filePath = `${fileName}`;
@@ -605,130 +645,107 @@ function ManageBusiness({style, getSeller, getBusinessType, getNameofBusiness}){
     <>
             <div
             style={{
-                ...style
+                ...style,
+                padding: "0 32px 32px"
             }}
             >
-                <h1 style={{
-                    paddingBottom: "10px",
-                    fontSize: "25px",
-                    fontWeight:"bold"
-                }}>
-
-                    
-                    My Menu
-                </h1>
-
-                
-                <div style={{
-                    backgroundColor: "white",
-                    width: "78vw",
-                    height:"80vh",
-                    borderRadius: "10px",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    columnGap: "5px",
-                    // rowGap: "0px"
-                }}>
-
-                    <button 
-                    onClick={()=>setOpenPopUp(true)}
-                    style={{
-                        margin: "20px",
-                        borderColor: "rgba(219, 217, 217, 1)",
-                        borderWidth: 2,
-                        height: "160px",
-                        width: "160px",
-                        borderRadius: "10px",
-                        display:"flex",
-                        justifyContent: "center",
-                        alignItems: "center",
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+                    <h1 style={{
+                        fontFamily: "var(--um-font-display)",
+                        fontSize: "24px",
+                        fontWeight: 600,
+                        color: "var(--um-ink)",
                     }}>
+                        My Menu
+                    </h1>
+                    <span style={{ fontSize: 13, color: "var(--um-ink-faint)" }}>
+                        {ownerMenu === null ? "" : `${ownerMenu.length} item${ownerMenu.length === 1 ? "" : "s"}`}
+                    </span>
+                </div>
+
+                <div className="um-card" style={{
+                    minHeight: "80vh",
+                    padding: "24px",
+                }}>
+
                     <div style={{
-                        // display: "flex",
-                        // justifyContent: "center",                    
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+                        gap: "18px",
                     }}>
-                        <IoAddCircle style={{fontSize:"90px", color:"rgba(17, 153, 114, 1)"}}/>
-                    </div>
-                    </button>
-                    {/* {console.log(`www: ${ownerMenu}`)} */}
 
-                    {ownerMenu === null ? 
-                    <>
-                        <div className="skeleton"
+                        <button
+                        onClick={()=>setOpenPopUp(true)}
                         style={{
-                            marginRight:"20px"
+                            border: "2px dashed var(--um-line)",
+                            borderRadius: "var(--um-radius-md)",
+                            aspectRatio: "1 / 1",
+                            display:"flex",
+                            flexDirection: "column",
+                            gap: 8,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            color: "var(--um-ink-faint)",
+                            transition: "border-color 0.15s ease, color 0.15s ease",
                         }}
-                        />  
-                        <div className="skeleton"
+                        onMouseEnter={(e)=>{ e.currentTarget.style.borderColor = "var(--um-pine)"; e.currentTarget.style.color = "var(--um-pine)"; }}
+                        onMouseLeave={(e)=>{ e.currentTarget.style.borderColor = "var(--um-line)"; e.currentTarget.style.color = "var(--um-ink-faint)"; }}
+                        >
+                            <IoAddCircle style={{fontSize:"44px"}}/>
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>Add item</span>
+                        </button>
+
+                        {ownerMenu === null ?
+                        <>
+                            <div className="skeleton" style={{ width: "100%", aspectRatio: "1 / 1", height: "auto" }} />
+                            <div className="skeleton" style={{ width: "100%", aspectRatio: "1 / 1", height: "auto" }} />
+                            <div className="skeleton" style={{ width: "100%", aspectRatio: "1 / 1", height: "auto" }} />
+                        </>
+                        :
+                        ownerMenu?.map((food, i)=>{
+                            return(
+                        <button
+                        key={i}
+                        onClick={()=>{
+                            const name = food.name;       // use current food name
+                            setSelectedEditItem(true);
+                            setOpenPopUp(true);     
+                            handleEdit(name);
+                            setRemovedFood(name);               
+                        }}
+                        className="um-card"
                         style={{
-                            marginRight:"20px"
+                            aspectRatio: "1 / 1",
+                            display: "flex",
+                            flexDirection: "column",
+                            overflow: "hidden",
+                            textAlign: "left",
+                            boxShadow: "var(--um-shadow-sm)",
+                            transition: "box-shadow 0.15s ease, transform 0.15s ease",
                         }}
-                        />  
-                        <div className="skeleton"
-                        style={{
-                            marginRight:"20px"
-                        }}
-                        />  
-                    </>                  
-                    :
-                    ownerMenu?.map((food, i)=>{
-                        return(
-                    <button
-                    className="editFood"
-                    key={i}
-                    onClick={()=>{
-                        const name = food.name;       // use current food name
-                        setSelectedEditItem(true);
-                        setOpenPopUp(true);     
-                        handleEdit(name);
-                        setRemovedFood(name);               
-                    }}
-                    style={{
-                        margin: "20px",
-                        borderColor: "rgba(219, 217, 217, 1)",
-                        borderWidth: 2,
-                        height: "160px",
-                        width: "160px",
-                        borderRadius: "10px",
-                        display: "flex",
-                        justifyContent: "center",
-                        // alignItems: "center",
-                    }}>
-                        <div  style={{
-                            // display: "flex",
-                            // flexDirection: "column"
-                        }}>
+                        onMouseEnter={(e)=>{ e.currentTarget.style.boxShadow = "var(--um-shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                        onMouseLeave={(e)=>{ e.currentTarget.style.boxShadow = "var(--um-shadow-sm)"; e.currentTarget.style.transform = "translateY(0)"; }}
+                        >
                             <img src={food.image} style={{
-                            height:"105px",
-                            width:"160px",
-                            borderTopLeftRadius: "5px",
-                            borderTopRightRadius: "5px",
-                        }}/>
+                                width: "100%",
+                                height: "62%",
+                                objectFit: "cover",
+                                flexShrink: 0,
+                            }}/>
 
-                        <label style={{
-                            display: "flex",
-                            alignSelf: "flex-start",
-                            marginTop: "2px",
-                            fontWeight: "bold",
-                            marginLeft: "7px"
-                        }}> {food.name.length > 12 ? food.name.slice(0,12)+"...":food.name}</label>
+                            <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+                                <span style={{ fontWeight: 700, fontSize: 14, color: "var(--um-ink)" }}>
+                                    {food.name.length > 12 ? food.name.slice(0,12)+"...":food.name}
+                                </span>
+                                <span style={{ fontWeight: 600, fontSize: 13, color: "var(--um-pine-dark)" }}>
+                                    {`₵${food.price}`}
+                                </span>
+                            </div>
+                        </button>
+                                )
+                            })}
+                    </div>
 
-                        <label style={{
-                            display: "flex",
-                            alignSelf: "flex-start",
-                            marginLeft: "7px",
-                            color: "red"
-                        }}>
-                            {`₵${food.price}`}
-                        </label>
-                        </div>
-                        
-
-                        {/* <IoAddCircle style={{fontSize:"90px", color:"rgba(17, 153, 114, 1)"}}/> */}
-                    </button>
-                        )
-                    })}
-                    
                 {openPopUp === true &&
                 <div style={{
                     position: "fixed",
@@ -736,82 +753,74 @@ function ManageBusiness({style, getSeller, getBusinessType, getNameofBusiness}){
                     left:0,
                     width: "100vw",
                     height: "100vh",
-                    backgroundColor: "rgba(0,0,0,0.5)",
+                    backgroundColor: "rgba(18, 38, 26, 0.45)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     zIndex: 1000
 
                 }}>
-                    <div style={{
-                        width: "46vw",
-                        height: "72vh",
-                        backgroundColor: "white",
+                    <div className="um-card" style={{
+                        width: "min(560px, 92vw)",
+                        maxHeight: "85vh",
+                        boxShadow: "var(--um-shadow-lg)",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "20px",
-
+                        flexDirection: "column",
+                        overflow: "hidden",
                     }}>
-                    
-                    <div style={{
-                        width: "45vw",
-                        height: "70vh",
-                        backgroundColor: "white",
-                        overflowY: "scroll"
 
-                        // position: "fixed",
-                        // left: 450,
-                        // top: 100,
-                    }}>
-                        <h1 style={{
-                            margin: "20px",
-                            fontSize: "30px",
-                            fontWeight: "bold",
+                        <div style={{
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                        }}>Add Item
-                        <button
-                            style={{
-                                color: "#554f4fff"                                
-                            }}
-                            onClick={()=>{
-                                setSelectedEditItem(false);
-                                setSelectedCatergory(null);
-                                setOpenPopUp(false);
-                                setItemData({});
-                                setInputAddOns([]);
-                                setAddOnLimit(0);
-                                setFileURL(null);
-                                setFile(null)
-                                setChecked({addOns: false,
-                                    category: false
-                                });
-                                setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
-                                setStuffCategoryType((prev) =>({
-                                    fashion: false,
-                                    books: false,
-                                    cosmetics: false,
-                                    electronics: false,
-                                    others: false,
+                            padding: "20px 24px",
+                            borderBottom: "1px solid var(--um-line)",
+                            flexShrink: 0,
+                        }}>
+                            <h1 style={{
+                                fontFamily: "var(--um-font-display)",
+                                fontSize: "20px",
+                                fontWeight: 600,
+                                color: "var(--um-ink)",
+                            }}>{selectedEditItem ? "Edit Item" : "Add Item"}</h1>
+                            <button
+                                className="um-btn-ghost"
+                                style={{ fontSize: 20 }}
+                                onClick={()=>{
+                                    setSelectedEditItem(false);
+                                    setSelectedCatergory(null);
+                                    setOpenPopUp(false);
+                                    setItemData({});
+                                    setInputAddOns([]);
+                                    setAddOnLimit(0);
+                                    setFileURL(null);
+                                    setFile(null)
+                                    setChecked({addOns: false,
+                                        category: false
+                                    });
+                                    setAddOns([{id: 0, field1: "Item", field2:"Price"}]);
+                                    setStuffCategoryType((prev) =>({
+                                        fashion: false,
+                                        books: false,
+                                        cosmetics: false,
+                                        electronics: false,
+                                        others: false,
+                                        }))
+                                    setFoodCategoryType((prev) =>({
+                                        rice: false,
+                                        staple: false,
+                                        snackies: false
                                     }))
-                                setFoodCategoryType((prev) =>({
-                                    rice: false,
-                                    staple: false,
-                                    snackies: false
-                                }))
-                            }}
-                        >
-                            <IoMdClose />
-                        </button>
-                        
-                        </h1>
+                                }}
+                            >
+                                <IoMdClose />
+                            </button>
+                        </div>
 
-                        
+                        <div className="um-scroll" style={{ overflowY: "auto", padding: "24px", flex: 1 }}>
+
                         { selectedEditItem===true&&showSkeletonView ? 
                         <>
-                        {/* {console.log("Seee:",showSkeletonView)} */}
                             <div className="addItemPicSkeleton"/> 
                             <div style={{
                                 display:"flex",
@@ -834,495 +843,428 @@ function ManageBusiness({style, getSeller, getBusinessType, getNameofBusiness}){
 
                             :
                             <>
-                                                    {/* {console.log("Seee:",showSkeletonView)} */}
-
                             <button style={{
-                            height: "15vh",
-                            borderRadius:10 ,
-                            marginLeft: "20px",
-                            width: "42.5vw",
-                            overflow:"hidden",
-                            display: "flex",
-                            alignItems:"center",
-                            border: "2px dashed #ccc",
-                            justifyContent:"center"
-
-
-                        }}
-                        onClick={()=>handleDialogue()}
-                        >
-                            {file ? <img src={URL.createObjectURL(file)} alt="Cover Picture" style={{height:"50vh", width: "50vw"}}/> : fileURL ? 
-                            <img src = {fileURL} alt="Cover Picture" style={{height:"50vh", width: "50vw"}}/> : 
-                            <FaRegImage style={{
-                                fontSize:"40px",
-                                color:"#a6a5a5ff"
-                            }}/>}
-                            {/* {handleFoodImage("image", jollof)} */}
-
-                        </button>
-                        <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        style={{ display: "none" }}
-                        onChange={handleUpload}
-                    />
-                            <div style={{
-                                display:"flex",
-                                flexDirection: "row",
-                                gap: 30,
-                            }}>
-                            {inputFields.map((input, i)=>{
-                            return (<div key={i} className="input-group"> 
-                            <input 
-                            placeholder=" " 
-                            name={input.name}
-                            value={itemData ? itemData[input.key] || "" : ""}
-                            onChange={(e)=>{input.key === "name" ?
-                                handleItemName(input.key,e.target.value) : 
-                                input.key === "price" ?
-                                handleItemPrice(input.key,e.target.value) :
-                                ""                           
-                            }}
-                            style={{
-                                borderWidth: 1
-                            }}
-                            type={input.type}
-                            />
-                            {/* {console.log(itemData)} */}
-                            <label>{input.name}:</label>
-                        </div>) 
-                            })}
-
-                            </div>
-
-
-                           {!selectedEditItem && <div style={{
-                                marginLeft:"20px",
-                                marginTop: "15px",
-                                backgroundColor: "#eee",
-                                width: "42.5vw",
-                                height: "5vh",
+                                height: "170px",
+                                borderRadius: "var(--um-radius-md)",
+                                width: "100%",
+                                overflow:"hidden",
                                 display: "flex",
-                                alignItems: "center",
-                                borderRadius: "5px",
-                              
-                            }}>
-                                <label style={{
-                                    display:"flex",
-                                    gap: 10
-                                }}>
-                                    <input type="checkbox"
-                                    checked={checked.category}
-                                    onChange={(e) => {
-                                        setChecked(prev => ({
-                                            ...prev,
-                                            category: e.target.checked
-                                            }));
-                                        // console.log("Checked on:", e.target.checked);
-                                    }}
-                                    style={{marginLeft: "10px", transform: "scale(1.4)"}}
-                                    />
-                                    Category
-                                </label>
-
-                            </div>}
-
-                                {
-                                    checked.category === true && 
-                                    <div>
-                                        <div style={{
-                                            display: "flex",
-                                            // height: "2vh",
-                                            flexWrap:"wrap",
-                                            marginLeft:"20px",
-                                            marginTop:"15px",
-                                            gap: 10
-                                        }}>
-                                            {
-                                                businessType ==="restaurant" ?
-                                                <>
-                                            <button 
-                                            onClick={()=>{setFoodCategoryType((prev) =>({
-                                                rice: true,
-                                                staple: false,
-                                                snackies: false
-                                            }));
-                                            setSelectedCatergory("rice");
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: foodCategoryType.rice === true ? "green" : "#c2bfbfff",
-                                                color: foodCategoryType.rice === true ? "green":"#848383ff",
-                                                backgroundColor: foodCategoryType.rice === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: foodCategoryType.rice === true ? "bold" : null
-                                            }}>
-                                                Rice Dish
-                                            </button>
-
-                                            <button 
-                                            onClick={()=>{setFoodCategoryType((prev) =>({
-                                                rice: false,
-                                                staple: true,
-                                                snackies: false
-                                            }));
-                                            setSelectedCatergory("staple");
-
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: foodCategoryType.staple === true ? "green" : "#c2bfbfff",
-                                                color: foodCategoryType.staple === true ? "green":"#848383ff",
-                                                backgroundColor: foodCategoryType.staple === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: foodCategoryType.staple === true ? "bold" : null
-                                            }}>
-                                                {"Staple Dish (Local)"}
-                                            </button>
-
-                                            <button 
-                                            onClick={()=>{setFoodCategoryType((prev) =>({
-                                                rice: false,
-                                                staple: false,
-                                                snackies: true
-                                            }));
-                                            setSelectedCatergory("snackies");                                        
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: foodCategoryType.snackies === true ? "green" : "#c2bfbfff",
-                                                color: foodCategoryType.snackies === true ? "green":"#848383ff",
-                                                backgroundColor: foodCategoryType.snackies === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: foodCategoryType.snackies === true ? "bold" : null
-                                            }}>
-                                                Snackies
-                                            </button>
-                                            </>
-                                                :
-                                                <>
-
-                                                <button 
-                                                    onClick={()=>{setStuffCategoryType((prev) =>({fashion: true,
-                                                                books: false,
-                                                                cosmetics: false,
-                                                                electronics: false,
-                                                                others: false,
-                                                            }));
-                                                    setSelectedCatergory("books");
-                                                    }}
-                                                    style={{
-                                                        height:"5vh",
-                                                        width:"10vw",
-                                                        borderRadius:"5px",
-                                                        borderWidth: 2,
-                                                        borderColor: stuffCategoryType.fashion === true ? "green" : "#c2bfbfff",
-                                                        color: stuffCategoryType.fashion === true ? "green":"#848383ff",
-                                                        backgroundColor: stuffCategoryType.fashion === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                        fontWeight: stuffCategoryType.fashion === true ? "bold" : null
-                                                    }}>
-                                                        Fashion
-                                            </button>
-
-
-                                                <button 
-                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
-                                                        books: true,
-                                                        cosmetics: false,
-                                                        electronics: false,
-                                                        others: false,
-                                                    }));
-                                            setSelectedCatergory("books");
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: stuffCategoryType.books === true ? "green" : "#c2bfbfff",
-                                                color: stuffCategoryType.books === true ? "green":"#848383ff",
-                                                backgroundColor: stuffCategoryType.books === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: stuffCategoryType.books === true ? "bold" : null
-                                            }}>
-                                                Books
-                                            </button>
-
-                                            <button 
-                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
-                                                        books: false,
-                                                        cosmetics: true,
-                                                        electronics: false,
-                                                        others: false,
-                                                    }));
-                                            setSelectedCatergory("cosmetics");
-
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: stuffCategoryType.cosmetics === true ? "green" : "#c2bfbfff",
-                                                color: stuffCategoryType.cosmetics === true ? "green":"#848383ff",
-                                                backgroundColor: stuffCategoryType.cosmetics === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: stuffCategoryType.cosmetics === true ? "bold" : null
-                                            }}>
-                                                {"Cosmetics"}
-                                            </button>
-
-                                            <button 
-                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
-                                                        books: false,
-                                                        cosmetics: false,
-                                                        electronics: true,
-                                                        others: false,
-                                                    }));
-                                            setSelectedCatergory("electronics");                                        
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: stuffCategoryType.electronics === true ? "green" : "#c2bfbfff",
-                                                color: stuffCategoryType.electronics === true ? "green":"#848383ff",
-                                                backgroundColor: stuffCategoryType.electronics === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: stuffCategoryType.electronics === true ? "bold" : null
-                                            }}>
-                                                Electronics
-                                            </button>
-                                            <button 
-                                            onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
-                                                        books: false,
-                                                        cosmetics: false,
-                                                        electronics: false,
-                                                        others: true,
-                                                    }));
-                                            setSelectedCatergory("others");                                        
-                                            }}
-                                            style={{
-                                                height:"5vh",
-                                                width:"10vw",
-                                                borderRadius:"5px",
-                                                borderWidth: 2,
-                                                borderColor: stuffCategoryType.others === true ? "green" : "#c2bfbfff",
-                                                color: stuffCategoryType.others === true ? "green":"#848383ff",
-                                                backgroundColor: stuffCategoryType.others === true ? "rgba(32, 145, 96, 0.22)": null,
-                                                fontWeight: stuffCategoryType.others === true ? "bold" : null
-                                            }}>
-                                                Others
-                                            </button>
-                                            </>
-                                            }
-                                        </div>
-                                        
-                                    </div>
-                                }
-
-
-                            <div style={{
-                                marginLeft:"20px",
-                                marginTop: "15px",
-                                backgroundColor: "#eee",
-                                width: "42.5vw",
-                                height: "5vh",
-                                display: "flex",
-                                alignItems: "center",
-                                borderRadius: "5px",
-                              
-                            }}>
-                                <label style={{
-                                    display:"flex",
-                                    gap: 10
-                                }}>
-                                    <input type="checkbox"
-                                    checked={checked.addOns}
-                                    onChange={(e) => {
-                                        setChecked(prev => ({
-                                            ...prev,
-                                            addOns: e.target.checked
-                                            }));
-                                        // console.log("Checked on:", e.target.checked);
-                                    }}
-                                    style={{marginLeft: "10px", transform: "scale(1.4)"}}
-                                    />
-                                    Add-Ons
-                                </label>
-
-                            </div>
-
-
-                                {checked.addOns === true && <div>
-                                    {/* {console.log("Add-Ons section is rendered, checked is:", checked)} */}
-                                    {addOns.map((addOn)=>{
-                                        return(
-                                        <div
-                                        key={addOn.id} 
-                                        style={{
-                                            display:"flex",
-                                            flexDirection: "row",
-                                            gap: 30,
-                                        }}>
-                                        <div className="input-group">
-                                            <input placeholder=" "
-                                            value={inputAddOns.find(item => (item.id === addOn.id))?.name || ""}
-                                            onChange={(e)=>handleAddOnsChange(addOn.id,"name",e.target.value)}
-                                            />
-                                            <label>{addOn.field1}</label>
-                                         </div>
-
-                                        <div className="input-group" style={{width:"110px"}}>
-                                            <input placeholder=" "
-                                            type="number"
-                                            value={inputAddOns.find(item => item.id === addOn.id)?.price || ""}
-                                            onChange={(e)=>handleAddOnsChange(addOn.id,"price",Number(e.target.value))}
-                                            />
-                                            <label>{addOn.field2}</label>
-
-                                         </div>
-                                         {/* {console.log(addOn.id)} */}
-                                         {/* {console.table(inputAddOns)}
-                                         {console.table(addOns)} */}
-
-                                            {/* <MdDelete style={{
-                                                marginTop: "31px",
-                                                fontSize: "26px",
-                                                color: "red"
-                                            }} /> */}
-                                            <div style={{
-                                            display:"flex",
-                                            flexDirection: "row",
-                                            gap: 15,
-                                        }}>   
-                                            <button
-                                            disabled={addOnLimit === 9 ? true : false}
-                                            onClick={()=>{
-                                                
-                                                setAddOnLimit((prev)=>prev+1)
-                                                setAddOns((prev)=>
-                                                [...prev,{id: addOnLimit+1,
-                                                    field1:"Item", 
-                                                    field2:"Price"}])   
-                                                }}
-                                                    
-                                            >
-
-                                                {/* {console.log(addOnLimit)} */}
-                                                <IoAddCircle style={{
-                                                        marginTop: "25px",
-                                                        fontSize: "26px",
-                                                        color: "green"
-                                                    }} />       
-                                            </button>
-                                            <button onClick={()=>removeAddOn(addOn.id)}>                                                
-                                                {addOn.id !== 0 && <MdDelete style={{
-                                                    marginTop: "25px",
-                                                    fontSize: "26px",
-                                                    color: "red"
-                                                }} />}
-                                            </button>
-                                            </div>                                                                              
-                                        </div>                                        
-                                    )
-                                    })}
-                                    {/* {<div className="input-group">
-                                        <input placeholder=" "/>
-                                        <label>Item</label>
-                                    </div>} */}
-                                </div>}
-
-                                {/* {
-                                    checked.category === true && 
-                                    <div>
-                                        <div style={{
-                                            display: "flex",
-                                            height: "20vh",
-                                            flexWrap:"wrap"
-                                        }}>
-                                            <button style={{
-                                                height:"5vh",
-                                                borderRadius:"5px",
-                                                borderWidth: 1,
-                                            }}>
-                                                Rice
-                                            </button>
-                                        </div>
-                                        
-                                    </div>
-                                } */}
-
+                                flexDirection: "column",
+                                gap: 6,
+                                alignItems:"center",
+                                justifyContent:"center",
+                                border: "2px dashed var(--um-line)",
+                                backgroundColor: "var(--um-line-soft)",
+                                color: "var(--um-ink-faint)",
+                            }}
+                            onClick={()=>handleDialogue()}
+                            >
+                                {file ? <img src={URL.createObjectURL(file)} alt="Cover Picture" style={{height:"100%", width: "100%", objectFit: "cover"}}/> : fileURL ? 
+                                <img src = {fileURL} alt="Cover Picture" style={{height:"100%", width: "100%", objectFit: "cover"}}/> : 
+                                <>
+                                    <FaRegImage style={{ fontSize:"32px" }}/>
+                                    <span style={{ fontSize: 13, fontWeight: 600 }}>Click to upload a photo</span>
+                                </>}
+                            </button>
+                            <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            style={{ display: "none" }}
+                            onChange={handleUpload}
+                        />
                                 <div style={{
                                     display:"flex",
-                                    alignItems: "flex-end",
-                                    justifyContent: "flex-end",
-                                    marginTop: checked.addOns?"25px":"35px",
-                                    marginRight: "10px",
-                                    marginBottom: "20px",
-                                    gap: selectedEditItem ? 10 : null
+                                    flexDirection: "row",
+                                    gap: 16,
+                                    marginTop: 18,
                                 }}>
-                                    <button 
-                                    onClick={()=>handleSubmit()}
-                                    style={{
-                                        backgroundColor: "rgba(34, 136, 87, 1)",
-                                        padding: "4px",
-                                        color: "white",
-                                        borderRadius: "5px",
-                                        width: selectedEditItem=== true ? "6vw":"10vw"
+                                {inputFields.map((input, i)=>{
+                                return (<div key={i} className="um-field" style={{ flex: 1 }}> 
+                                <input 
+                                placeholder=" " 
+                                name={input.name}
+                                value={itemData ? itemData[input.key] || "" : ""}
+                                onChange={(e)=>{input.key === "name" ?
+                                    handleItemName(input.key,e.target.value) : 
+                                    input.key === "price" ?
+                                    handleItemPrice(input.key,e.target.value) :
+                                    ""                           
+                                }}
+                                style={{ paddingLeft: 14 }}
+                                type={input.type}
+                                />
+                                <label style={{ left: 14 }}>{input.name}</label>
+                            </div>) 
+                                })}
 
-                                    }}>{ loader === false ? "Submit" 
-                                        :
-                                        <div style={{
-                                            display:"flex",
-                                            alignItems: "center",
-                                            justifyContent:"center"
-                                        }}>
-                                            <div className="loaderSubmit"/>
-                                        </div>}
-                                    </button>
-
-                                    {selectedEditItem && <button 
-                                    onClick={()=>removeFood()}
-                                    style={{
-                                        backgroundColor: "rgba(201, 11, 11, 1)",
-                                        padding: "4px",
-                                        color: "white",
-                                        borderRadius: "5px",
-                                        width:"6vw"
-
-                                    }}>
-                                        { removeLoader === false ? "Remove" 
-                                        :
-                                        <div style={{
-                                            display:"flex",
-                                            alignItems: "center",
-                                            justifyContent:"center"
-                                        }}>
-                                            <div className="loaderRemove"/>
-                                        </div>}
-
-                                    </button>}
-
-                                    
                                 </div>
+
+
+                               {!selectedEditItem && <label style={{
+                                    marginTop: "16px",
+                                    backgroundColor: "var(--um-line-soft)",
+                                    width: "100%",
+                                    padding: "12px 14px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    borderRadius: "var(--um-radius-sm)",
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: "var(--um-ink)",
+                                    cursor: "pointer",
+                                }}>
+                                        <input type="checkbox"
+                                        checked={checked.category}
+                                        onChange={(e) => {
+                                            setChecked(prev => ({
+                                                ...prev,
+                                                category: e.target.checked
+                                                }));
+                                        }}
+                                        style={{ transform: "scale(1.2)" }}
+                                        />
+                                        Category
+                                </label>}
+
+                                    {
+                                        checked.category === true && 
+                                        <div style={{
+                                            display: "flex",
+                                            flexWrap:"wrap",
+                                            marginTop:"12px",
+                                            gap: 8
+                                        }}>
+                                                {
+                                                    businessType ==="restaurant" ?
+                                                    <>
+                                                <button 
+                                                onClick={()=>{setFoodCategoryType((prev) =>({
+                                                    rice: true,
+                                                    staple: false,
+                                                    snackies: false
+                                                }));
+                                                setSelectedCatergory("rice");
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${foodCategoryType.rice ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: foodCategoryType.rice ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: foodCategoryType.rice ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Rice Dish
+                                                </button>
+
+                                                <button 
+                                                onClick={()=>{setFoodCategoryType((prev) =>({
+                                                    rice: false,
+                                                    staple: true,
+                                                    snackies: false
+                                                }));
+                                                setSelectedCatergory("staple");
+
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${foodCategoryType.staple ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: foodCategoryType.staple ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: foodCategoryType.staple ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    {"Staple Dish (Local)"}
+                                                </button>
+
+                                                <button 
+                                                onClick={()=>{setFoodCategoryType((prev) =>({
+                                                    rice: false,
+                                                    staple: false,
+                                                    snackies: true
+                                                }));
+                                                setSelectedCatergory("snackies");                                        
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${foodCategoryType.snackies ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: foodCategoryType.snackies ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: foodCategoryType.snackies ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Snackies
+                                                </button>
+                                                </>
+                                                    :
+                                                    <>
+
+                                                    <button 
+                                                        onClick={()=>{setStuffCategoryType((prev) =>({fashion: true,
+                                                                    books: false,
+                                                                    cosmetics: false,
+                                                                    electronics: false,
+                                                                    others: false,
+                                                                }));
+                                                        setSelectedCatergory("books");
+                                                        }}
+                                                        style={{
+                                                            padding: "9px 16px",
+                                                            borderRadius:"999px",
+                                                            border: `1.5px solid ${stuffCategoryType.fashion ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                            color: stuffCategoryType.fashion ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                            backgroundColor: stuffCategoryType.fashion ? "var(--um-pine-wash)": "transparent",
+                                                            fontWeight: 600,
+                                                            fontSize: 13,
+                                                        }}>
+                                                            Fashion
+                                                </button>
+
+
+                                                    <button 
+                                                onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                            books: true,
+                                                            cosmetics: false,
+                                                            electronics: false,
+                                                            others: false,
+                                                        }));
+                                                setSelectedCatergory("books");
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${stuffCategoryType.books ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: stuffCategoryType.books ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: stuffCategoryType.books ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Books
+                                                </button>
+
+                                                <button 
+                                                onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                            books: false,
+                                                            cosmetics: true,
+                                                            electronics: false,
+                                                            others: false,
+                                                        }));
+                                                setSelectedCatergory("cosmetics");
+
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${stuffCategoryType.cosmetics ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: stuffCategoryType.cosmetics ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: stuffCategoryType.cosmetics ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Cosmetics
+                                                </button>
+                                                <button 
+                                                onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                            books: false,
+                                                            cosmetics: false,
+                                                            electronics: true,
+                                                            others: false,
+                                                        }));
+                                                setSelectedCatergory("electronics");                                        
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${stuffCategoryType.electronics ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: stuffCategoryType.electronics ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: stuffCategoryType.electronics ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Electronics
+                                                </button>
+                                                <button 
+                                                onClick={()=>{setStuffCategoryType((prev) =>({fashion: false,
+                                                            books: false,
+                                                            cosmetics: false,
+                                                            electronics: false,
+                                                            others: true,
+                                                        }));
+                                                setSelectedCatergory("others");                                        
+                                                }}
+                                                style={{
+                                                    padding: "9px 16px",
+                                                    borderRadius:"999px",
+                                                    border: `1.5px solid ${stuffCategoryType.others ? "var(--um-pine)" : "var(--um-line)"}`,
+                                                    color: stuffCategoryType.others ? "var(--um-pine-dark)":"var(--um-ink-soft)",
+                                                    backgroundColor: stuffCategoryType.others ? "var(--um-pine-wash)": "transparent",
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}>
+                                                    Others
+                                                </button>
+                                                </>
+                                                }
+                                        </div>
+                                    }
+
+
                                 <label style={{
-                                    display:"flex",
-                                    alignItems:"center",
-                                    justifyContent:"center",
-                                    color:"rgba(170, 170, 170, 1)",
-                                    fontStyle:"italic"
-                                }}>You can add up to 10 add-ons.</label>
-                                
+                                    marginTop: "16px",
+                                    backgroundColor: "var(--um-line-soft)",
+                                    width: "100%",
+                                    padding: "12px 14px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    borderRadius: "var(--um-radius-sm)",
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: "var(--um-ink)",
+                                    cursor: "pointer",
+                                }}>
+                                        <input type="checkbox"
+                                        checked={checked.addOns}
+                                        onChange={(e) => {
+                                            setChecked(prev => ({
+                                                ...prev,
+                                                addOns: e.target.checked
+                                                }));
+                                        }}
+                                        style={{ transform: "scale(1.2)" }}
+                                        />
+                                        Add-Ons
+                                </label>
+
+
+                                    {checked.addOns === true && <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                                        {addOns.map((addOn)=>{
+                                            return(
+                                            <div
+                                            key={addOn.id} 
+                                            style={{
+                                                display:"flex",
+                                                flexDirection: "row",
+                                                alignItems: "center",
+                                                gap: 10,
+                                            }}>
+                                            <div className="um-field" style={{ flex: 1 }}>
+                                                <input placeholder=" "
+                                                value={inputAddOns.find(item => (item.id === addOn.id))?.name || ""}
+                                                onChange={(e)=>handleAddOnsChange(addOn.id,"name",e.target.value)}
+                                                style={{ paddingLeft: 14 }}
+                                                />
+                                                <label style={{ left: 14 }}>{addOn.field1}</label>
+                                             </div>
+
+                                            <div className="um-field" style={{width:"110px"}}>
+                                                <input placeholder=" "
+                                                type="number"
+                                                value={inputAddOns.find(item => item.id === addOn.id)?.price || ""}
+                                                onChange={(e)=>handleAddOnsChange(addOn.id,"price",Number(e.target.value))}
+                                                style={{ paddingLeft: 14 }}
+                                                />
+                                                <label style={{ left: 14 }}>{addOn.field2}</label>
+
+                                             </div>
+
+                                                <div style={{
+                                                display:"flex",
+                                                alignItems: "center",
+                                                gap: 4,
+                                            }}>   
+                                                <button
+                                                className="um-btn-ghost"
+                                                disabled={addOnLimit === 9 ? true : false}
+                                                onClick={()=>{
+                                                    
+                                                    setAddOnLimit((prev)=>prev+1)
+                                                    setAddOns((prev)=>
+                                                    [...prev,{id: addOnLimit+1,
+                                                        field1:"Item", 
+                                                        field2:"Price"}])   
+                                                    }}
+                                                        
+                                                >
+                                                    <IoAddCircle style={{
+                                                            fontSize: "22px",
+                                                            color: "var(--um-pine)"
+                                                        }} />       
+                                                </button>
+                                                <button className="um-btn-ghost" onClick={()=>removeAddOn(addOn.id)}>                                                
+                                                    {addOn.id !== 0 && <MdDelete style={{
+                                                        fontSize: "22px",
+                                                        color: "var(--um-clay)"
+                                                    }} />}
+                                                </button>
+                                                </div>                                                                              
+                                            </div>                                        
+                                        )
+                                        })}
+                                    </div>}
+
                                 </>
                                 }
+                        </div>
 
-                    </div>
+                        { !(selectedEditItem===true&&showSkeletonView) &&
+                        <div style={{
+                            borderTop: "1px solid var(--um-line)",
+                            padding: "16px 24px",
+                            flexShrink: 0,
+                        }}>
+                            <div style={{
+                                display:"flex",
+                                alignItems: "center",
+                                justifyContent: "flex-end",
+                                gap: 10,
+                            }}>
+                                {selectedEditItem && <button 
+                                onClick={()=>removeFood()}
+                                className="um-btn um-btn-danger"
+                                style={{ minWidth: 96 }}
+                                >
+                                    { removeLoader === false ? "Remove" 
+                                    :
+                                    <div style={{
+                                        display:"flex",
+                                        alignItems: "center",
+                                        justifyContent:"center"
+                                    }}>
+                                        <div className="loaderRemove"/>
+                                    </div>}
+
+                                </button>}
+
+                                <button 
+                                onClick={()=>handleSubmit()}
+                                className="um-btn um-btn-primary"
+                                style={{ minWidth: 96 }}
+                                >{ loader === false ? "Submit" 
+                                    :
+                                    <div style={{
+                                        display:"flex",
+                                        alignItems: "center",
+                                        justifyContent:"center"
+                                    }}>
+                                        <div className="loaderSubmit"/>
+                                    </div>}
+                                </button>
+                            </div>
+                            <p style={{
+                                marginTop: "10px",
+                                textAlign: "center",
+                                color:"var(--um-ink-faint)",
+                                fontStyle:"italic",
+                                fontSize: 13,
+                            }}>You can add up to 10 add-ons.</p>
+                        </div>
+                        }
+
                     </div>
                 </div>}
 
